@@ -31,7 +31,7 @@ interface PrototypeState {
 }
 
 function extractDefaultState(html: string): PrototypeState {
-  const match = html.match(/var DEFAULT_STATE = (\{.*\});/s);
+  const match = html.match(/var DEFAULT_STATE = (\{.*\});\s*\nvar STORAGE_KEY/s);
   if (!match) throw new Error('DEFAULT_STATE introuvable dans le prototype.');
   return JSON.parse(match[1]) as PrototypeState;
 }

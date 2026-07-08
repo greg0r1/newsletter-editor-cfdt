@@ -1,4 +1,4 @@
-import { buildLogoutCookieHeader, buildSessionCookieHeader, createSessionCookieValue } from './_lib/auth';
+import { buildLogoutCookieHeader, buildSessionCookieHeader, createSessionCookieValue } from './_lib/auth.js';
 
 export async function POST(request: Request): Promise<Response> {
   try {

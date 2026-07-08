@@ -1,6 +1,6 @@
-import { supabase } from './_lib/supabase';
-import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth';
-import { newsletterRowToDTO, type ArticleRow, type NewsletterDTO, type NewsletterRow } from './_lib/types';
+import { supabase } from './_lib/supabase.js';
+import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth.js';
+import { newsletterRowToDTO, type ArticleRow, type NewsletterDTO, type NewsletterRow } from './_lib/types.js';
 
 function requireAuth(request: Request): boolean {
   const cookies = parseCookies(request.headers.get('cookie') ?? undefined);

@@ -1,5 +1,5 @@
 import { next } from '@vercel/functions';
-import { AUTH_COOKIE_NAME, parseCookies, verifySessionCookieValue } from './api/_lib/auth';
+import { AUTH_COOKIE_NAME, parseCookies, verifySessionCookieValue } from './api/_lib/auth.js';
 
 export const config = {
   runtime: 'nodejs',

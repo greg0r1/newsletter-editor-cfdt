@@ -1,5 +1,5 @@
 import { put } from '@vercel/blob';
-import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth';
+import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth.js';
 
 function requireAuth(request: Request): boolean {
   const cookies = parseCookies(request.headers.get('cookie') ?? undefined);

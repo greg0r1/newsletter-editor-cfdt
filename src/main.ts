@@ -3,7 +3,7 @@ import './print.css';
 import type { Newsletter } from './state';
 import { renderAll } from './render';
 import { Editor } from './edit';
-import { getNewsletter, saveNewsletter } from './api';
+import { getNewsletter, saveNewsletter, logout } from './api';
 import { exportJSON, importJSON } from './importExport';
 
 const root = document.getElementById('newsletterRoot') as HTMLElement;
@@ -11,6 +11,8 @@ const saveIndicator = document.getElementById('saveIndicator') as HTMLElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const importInput = document.getElementById('importInput') as HTMLInputElement;
 const fmtToolbar = document.getElementById('fmtToolbar') as HTMLElement;
+const appContent = document.getElementById('appContent') as HTMLElement;
+const bootLoader = document.getElementById('bootLoader') as HTMLElement;
 
 const editor = new Editor({ root, saveIndicator, fileInput, fmtToolbar });
 
@@ -20,6 +22,8 @@ async function boot(): Promise<void> {
   root.dataset.newsletterId = state.id;
   renderAll(root, state);
   saveIndicator.textContent = 'Chargé';
+  appContent.classList.remove('loading');
+  bootLoader.classList.add('hidden');
 }
 
 function loadInto(state: Newsletter): void {
@@ -60,7 +64,13 @@ document.getElementById('btnReset')?.addEventListener('click', async () => {
   loadInto(state);
 });
 
+document.getElementById('btnLogout')?.addEventListener('click', async () => {
+  await logout();
+  window.location.href = '/login/';
+});
+
 boot().catch((err) => {
   console.error(err);
   saveIndicator.textContent = 'Erreur de chargement';
+  bootLoader.textContent = 'Erreur de chargement. Rechargez la page.';
 });

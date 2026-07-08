@@ -80,3 +80,7 @@ export async function login(password: string): Promise<void> {
   });
   if (!res.ok) throw new Error('Mot de passe incorrect');
 }
+
+export async function logout(): Promise<void> {
+  await fetch('/api/login', { method: 'DELETE' });
+}

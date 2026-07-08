@@ -32,8 +32,25 @@
     border: 1.5px solid #d8dee5;
     border-radius: 8px;
     font-size: 14px;
+    width: 100%;
   }
   input:focus { outline: none; border-color: var(--orange); }
+  .password-field { position: relative; }
+  .password-field input { padding-right: 40px; }
+  .toggle-password {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 6px 8px;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    color: #6b7684;
+  }
+  .toggle-password:hover { background: none; color: var(--navy); }
   button {
     background: var(--orange);
     color: #fff;
@@ -51,7 +68,10 @@
 <body>
 <form id="loginForm">
   <h1>ACTU UD CFDT 06</h1>
-  <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password" required />
+  <div class="password-field">
+    <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password" required />
+    <button type="button" class="toggle-password" id="togglePassword" aria-label="Afficher le mot de passe">👁</button>
+  </div>
   <div class="error" id="loginError"></div>
   <button type="submit">Se connecter</button>
 </form>

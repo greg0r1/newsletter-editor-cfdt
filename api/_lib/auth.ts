@@ -2,6 +2,9 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const AUTH_COOKIE_NAME = 'cfdt_auth';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 jours
+// `Secure` est ignoré par certains navigateurs (Firefox, Safari) sur http://localhost,
+// ce qui empêche le cookie d'être posé en dev local avec `vercel dev`.
+const IS_PRODUCTION = process.env.VERCEL_ENV === 'production';
 
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -37,7 +40,7 @@ export function buildSessionCookieHeader(value: string): string {
   const parts = [
     `${AUTH_COOKIE_NAME}=${value}`,
     'HttpOnly',
-    'Secure',
+    ...(IS_PRODUCTION ? ['Secure'] : []),
     'SameSite=Lax',
     'Path=/',
     `Max-Age=${SESSION_MAX_AGE_SECONDS}`,
@@ -46,7 +49,8 @@ export function buildSessionCookieHeader(value: string): string {
 }
 
 export function buildLogoutCookieHeader(): string {
-  return `${AUTH_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+  const securePart = IS_PRODUCTION ? 'Secure; ' : '';
+  return `${AUTH_COOKIE_NAME}=; HttpOnly; ${securePart}SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 export function parseCookies(header: string | undefined): Record<string, string> {

@@ -2,7 +2,7 @@ import { next } from '@vercel/functions';
 import { AUTH_COOKIE_NAME, parseCookies, verifySessionCookieValue } from './api/_lib/auth';
 
 export const config = {
-  runtime: 'nodejs' as const,
+  runtime: 'nodejs',
   matcher: ['/((?!login|api/login|assets|favicon.ico).*)'],
 };
 

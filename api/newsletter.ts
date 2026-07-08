@@ -8,29 +8,23 @@ function requireAuth(request: Request): boolean {
 }
 
 async function loadNewsletter(): Promise<NewsletterDTO> {
+  // Jointure imbriquée Supabase (PostgREST) : un seul aller-retour réseau au lieu
+  // de deux requêtes séquentielles, ce qui compte doublement vu la latence entre
+  // la fonction Vercel (iad1) et Supabase (eu-central-1).
   const { data: newsletterRow, error: newsletterError } = await supabase
     .from('newsletters')
-    .select('*')
+    .select('*, articles(*)')
     .order('updated_at', { ascending: false })
     .limit(1)
-    .single<NewsletterRow>();
+    .single<NewsletterRow & { articles: ArticleRow[] }>();
 
   if (newsletterError || !newsletterRow) {
     throw new Error(`Newsletter introuvable: ${newsletterError?.message ?? 'aucune ligne'}`);
   }
 
-  const { data: articleRows, error: articlesError } = await supabase
-    .from('articles')
-    .select('*')
-    .eq('newsletter_id', newsletterRow.id)
-    .order('position', { ascending: true })
-    .returns<ArticleRow[]>();
+  const articleRows = [...newsletterRow.articles].sort((a, b) => a.position - b.position);
 
-  if (articlesError) {
-    throw new Error(`Chargement des articles impossible: ${articlesError.message}`);
-  }
-
-  return newsletterRowToDTO(newsletterRow, articleRows ?? []);
+  return newsletterRowToDTO(newsletterRow, articleRows);
 }
 
 async function saveNewsletter(body: NewsletterDTO): Promise<void> {

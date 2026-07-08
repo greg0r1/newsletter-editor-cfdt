@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ACTU UD CFDT 06 — Éditeur de newsletter</title>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <h1>📰 Éditeur ACTU UD CFDT 06</h1>
+  <span class="save-indicator" id="saveIndicator"></span>
+  <button class="tbtn primary" id="btnAdd">＋ Article</button>
+  <button class="tbtn" id="btnImportTrigger">⬆ Importer</button>
+  <button class="tbtn" id="btnExport">⬇ Exporter</button>
+  <button class="tbtn" id="btnPrint">🖨 Imprimer / PDF</button>
+  <button class="tbtn danger" id="btnReset">↺ Réinitialiser</button>
+</div>
+
+<div class="wrap-outer">
+  <div class="newsletter" id="newsletterRoot"></div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none" />
+<input type="file" id="importInput" accept="application/json,.json" style="display:none" />
+
+<div class="fmt-toolbar no-print" id="fmtToolbar">
+  <button data-cmd="bold" title="Gras"><b>G</b></button>
+  <button data-cmd="insertUnorderedList" title="Liste à puces">• Liste</button>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

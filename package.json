@@ -1,0 +1,24 @@
+{
+  "name": "newsletter-editor-cfdt",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "vercel-build": "tsc -b && vite build",
+    "seed": "tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "@vercel/blob": "^2.6.1",
+    "@vercel/functions": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.10"
+  }
+}

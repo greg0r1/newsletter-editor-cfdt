@@ -1,0 +1,44 @@
+/* Règles validées empiriquement — voir CLAUDE.md avant toute modification */
+
+.articles {
+  column-count: 3;
+  column-gap: 16px;
+  column-fill: auto;
+  padding: 0 10mm;
+}
+
+.tail {
+  break-inside: avoid;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+  .toolbar,
+  .no-print {
+    display: none !important;
+  }
+  .wrap-outer {
+    padding: 0;
+  }
+  .newsletter {
+    width: 100%;
+    box-shadow: none;
+  }
+  .editable {
+    outline: none !important;
+    background: none !important;
+  }
+  .art-toolbar,
+  .img-btn,
+  .add-art-btn,
+  .fmt-toolbar {
+    display: none !important;
+  }
+}

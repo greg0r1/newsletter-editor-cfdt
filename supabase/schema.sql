@@ -31,3 +31,11 @@ create table if not exists article_versions (
   created_at timestamptz not null default now()
 );
 create index if not exists article_versions_article_id_created_at_idx on article_versions(article_id, created_at desc);
+
+-- RLS : aucun accès client (anon/authenticated) n'est prévu, tout passe par
+-- les fonctions serverless api/* avec la clé service_role (qui bypass RLS).
+-- Activer RLS sans policy ferme donc l'accès à la clé anon si elle fuitait,
+-- sans rien changer côté serveur.
+alter table newsletters enable row level security;
+alter table articles enable row level security;
+alter table article_versions enable row level security;

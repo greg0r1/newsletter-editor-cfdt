@@ -51,6 +51,7 @@ function ICON_B(kind: string): string {
 
 const ICONS = {
   close: icon('<path d="M18 6 6 18M6 6l12 12"/>'),
+  save: icon('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/>'),
   image: icon(
     '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
       '<path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
@@ -127,6 +128,7 @@ export class EditPanel {
   private cb: PanelCallbacks;
   private appContent: HTMLElement;
   private selection: Selection | null = null;
+  private dirty = false;
 
   constructor(opts: {
     aside: HTMLElement;
@@ -153,6 +155,7 @@ export class EditPanel {
 
   close(): void {
     this.selection = null;
+    this.dirty = false;
     this.clearSelectedMarker();
     this.aside.innerHTML = '';
     this.appContent.classList.remove('panel-open');
@@ -161,6 +164,7 @@ export class EditPanel {
   private render(sel: Selection): void {
     this.clearSelectedMarker();
     this.selection = sel;
+    this.dirty = false;
     this.markSelected(sel);
     this.aside.innerHTML = this.renderFor(sel);
     this.appContent.classList.add('panel-open');
@@ -170,14 +174,20 @@ export class EditPanel {
   /**
    * Resynchronise le panneau après une mutation structurelle de la feuille
    * (déplacement/suppression d'article, changement d'image, toggle encart).
-   * Contrairement à open(), ne vole pas le focus : l'utilisateur reste
-   * généralement sur le bouton qu'il vient de cliquer. Si le bloc édité
-   * n'existe plus, ferme le panneau.
+   * Ces actions passent déjà par le bouton "Enregistrer" (voir bindEvents),
+   * donc aucune modif de champ texte n'est en jeu ici. Contrairement à
+   * open(), ne vole pas le focus : l'utilisateur reste généralement sur le
+   * bouton qu'il vient de cliquer. Si le bloc édité n'existe plus, ferme le
+   * panneau.
    */
   refresh(): void {
     if (!this.selection) return;
     if (this.selection.kind === 'article' && !this.selection.el.isConnected) {
-      this.close();
+      this.selection = null;
+      this.dirty = false;
+      this.clearSelectedMarker();
+      this.aside.innerHTML = '';
+      this.appContent.classList.remove('panel-open');
       return;
     }
     this.render(this.selection);
@@ -219,6 +229,8 @@ export class EditPanel {
     return (
       `<div class="pf-header">` +
       `<span class="pf-title">${title}</span>` +
+      `<span class="pf-dirty" hidden>Modifications non enregistrées</span>` +
+      `<button type="button" class="tbtn primary pf-save" data-panel="save">${ICONS.save} Enregistrer</button>` +
       `<button type="button" class="pf-close" data-panel="close" title="Fermer">${ICONS.close}</button>` +
       `</div>`
     );
@@ -406,6 +418,7 @@ export class EditPanel {
     return null;
   }
 
+  /** Recopie un champ du panneau vers son miroir dans la feuille (sans sauvegarder). */
   private syncField(field: HTMLElement): void {
     const name = field.dataset.mirror;
     if (!name) return;
@@ -413,6 +426,19 @@ export class EditPanel {
     if (!mirror) return;
     if (HTML_FIELDS.has(name)) mirror.innerHTML = field.innerHTML;
     else mirror.textContent = field.textContent;
+  }
+
+  private setDirty(): void {
+    if (this.dirty) return;
+    this.dirty = true;
+    this.aside.querySelector<HTMLElement>('.pf-dirty')?.removeAttribute('hidden');
+  }
+
+  /** Applique tous les champs du panneau à la feuille puis déclenche la sauvegarde. */
+  private saveAll(): void {
+    this.aside.querySelectorAll<HTMLElement>('[data-mirror]').forEach((field) => this.syncField(field));
+    this.dirty = false;
+    this.aside.querySelector<HTMLElement>('.pf-dirty')?.setAttribute('hidden', '');
     this.cb.onChange();
   }
 
@@ -435,7 +461,7 @@ export class EditPanel {
     if (!node) return;
     node.focus();
     document.execCommand(cmd, false, value);
-    this.syncField(node);
+    this.setDirty();
   }
 
   private toggleColorPopover(btn: HTMLElement): void {
@@ -451,10 +477,11 @@ export class EditPanel {
   }
 
   private bindEvents(): void {
-    // Sync one-way des champs du panneau vers la feuille.
+    // La frappe ne touche que le champ du panneau : la feuille et le serveur
+    // ne sont mis à jour qu'au clic sur "Enregistrer" (voir saveAll()).
     this.aside.addEventListener('input', (e) => {
       const field = (e.target as HTMLElement).closest<HTMLElement>('[data-mirror]');
-      if (field) this.syncField(field);
+      if (field) this.setDirty();
     });
 
     // Boutons de formatage : agissent sur le champ riche courant.
@@ -496,6 +523,9 @@ export class EditPanel {
       const art = this.articleEl();
 
       switch (action) {
+        case 'save':
+          this.saveAll();
+          break;
         case 'close':
           this.close();
           break;

@@ -43,21 +43,22 @@ export class Editor {
     this.bindEvents();
   }
 
-  private setSaveIndicator(text: string): void {
+  private setSaveIndicator(text: string, state: 'saving' | 'saved' | 'error'): void {
     this.saveIndicator.textContent = text;
+    this.saveIndicator.dataset.state = state;
   }
 
   /** Déclenche la sauvegarde debounced. Point d'entrée public (utilisé par le panneau). */
   save(): void {
-    this.setSaveIndicator('Sauvegarde…');
+    this.setSaveIndicator('Sauvegarde…', 'saving');
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(async () => {
       try {
         const data = this.serialize();
         await saveNewsletter(data);
-        this.setSaveIndicator('Enregistré ✓');
+        this.setSaveIndicator('Enregistré', 'saved');
       } catch (err) {
-        this.setSaveIndicator('Erreur de sauvegarde');
+        this.setSaveIndicator('Erreur de sauvegarde', 'error');
         console.error(err);
       }
     }, SAVE_DELAY_MS);

@@ -32,10 +32,12 @@ if (toolbarEl) {
 
 async function boot(): Promise<void> {
   saveIndicator.textContent = 'Chargement…';
+  saveIndicator.dataset.state = 'saving';
   const state = await getNewsletter();
   root.dataset.newsletterId = state.id;
   renderAll(root, state);
   saveIndicator.textContent = 'Chargé';
+  saveIndicator.dataset.state = 'saved';
   appContent.classList.remove('loading');
   bootLoader.classList.add('hidden');
 }
@@ -89,5 +91,7 @@ document.getElementById('btnLogout')?.addEventListener('click', async () => {
 boot().catch((err) => {
   console.error(err);
   saveIndicator.textContent = 'Erreur de chargement';
+  saveIndicator.dataset.state = 'error';
   bootLoader.textContent = 'Erreur de chargement. Rechargez la page.';
+  bootLoader.classList.add('error');
 });

@@ -24,14 +24,77 @@ const HTML_FIELDS = new Set([
   'highlight',
 ]);
 
-/** Commandes du mini-éditeur riche (mappées sur document.execCommand). */
-const FORMAT_BUTTONS: ReadonlyArray<{ cmd: string; label: string; title: string }> = [
-  { cmd: 'bold', label: '<b>G</b>', title: 'Gras' },
-  { cmd: 'italic', label: '<i>I</i>', title: 'Italique' },
-  { cmd: 'underline', label: '<u>S</u>', title: 'Souligné' },
-  { cmd: 'insertUnorderedList', label: '• Liste', title: 'Liste à puces' },
-  { cmd: 'insertOrderedList', label: '1. Liste', title: 'Liste numérotée' },
-  { cmd: 'removeFormat', label: '⨯ Format', title: 'Effacer le format' },
+/** Icône SVG inline (tracés style Lucide, colorés via currentColor). */
+function icon(paths: string): string {
+  return (
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ` +
+    `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`
+  );
+}
+
+/** Icônes de la barre de formatage riche (mêmes conventions que `icon`). */
+function ICON_B(kind: string): string {
+  const p: Record<string, string> = {
+    bold: '<path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/>',
+    italic: '<line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/>',
+    underline: '<path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/>',
+    bullet: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor" stroke="none"/>',
+    ordered: '<line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6.5 15.5A1 1 0 1 0 5 17c.7.4-1 1-1.5 1.5H6.5"/>',
+    alignLeft: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>',
+    alignCenter: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    color: '<path d="M12 3 4 21h3l1.5-4h7L18 21h3z"/><path d="M9.2 14h5.6"/>',
+    clear: '<path d="M4 7h16"/><path d="m6 7 1 13h10l1-13"/><path d="m9 4 6 0"/><line x1="9" y1="11" x2="15" y2="17"/><line x1="15" y1="11" x2="9" y2="17"/>',
+  };
+  return icon(p[kind] ?? '');
+}
+
+const ICONS = {
+  close: icon('<path d="M18 6 6 18M6 6l12 12"/>'),
+  image: icon(
+    '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
+      '<path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  ),
+  trash: icon(
+    '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
+      '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  ),
+  up: icon('<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>'),
+  down: icon('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'),
+  plus: icon('<path d="M12 5v14M5 12h14"/>'),
+  minus: icon('<path d="M5 12h14"/>'),
+};
+
+/**
+ * Boutons du mini-éditeur riche. La plupart sont de simples `document.execCommand`
+ * (`cmd`), regroupés visuellement par `group`. Deux ont un comportement spécial
+ * (`special`) traité à part : insertion de lien (prompt) et couleur (palette).
+ */
+type FormatButton =
+  | { cmd: string; label: string; title: string; group: number }
+  | { special: 'link' | 'color'; label: string; title: string; group: number };
+
+const FORMAT_BUTTONS: ReadonlyArray<FormatButton> = [
+  { cmd: 'bold', label: ICON_B('bold'), title: 'Gras', group: 0 },
+  { cmd: 'italic', label: ICON_B('italic'), title: 'Italique', group: 0 },
+  { cmd: 'underline', label: ICON_B('underline'), title: 'Souligné', group: 0 },
+  { cmd: 'insertUnorderedList', label: ICON_B('bullet'), title: 'Liste à puces', group: 1 },
+  { cmd: 'insertOrderedList', label: ICON_B('ordered'), title: 'Liste numérotée', group: 1 },
+  { cmd: 'justifyLeft', label: ICON_B('alignLeft'), title: 'Aligner à gauche', group: 2 },
+  { cmd: 'justifyCenter', label: ICON_B('alignCenter'), title: 'Centrer', group: 2 },
+  { special: 'link', label: ICON_B('link'), title: 'Insérer un lien', group: 3 },
+  { special: 'color', label: ICON_B('color'), title: 'Couleur du texte', group: 3 },
+  { cmd: 'removeFormat', label: ICON_B('clear'), title: 'Effacer le format', group: 4 },
+];
+
+/** Palette de couleurs proposée pour le texte (identité + neutres). */
+const TEXT_COLORS: ReadonlyArray<{ value: string; name: string }> = [
+  { value: '#2f3640', name: 'Encre' },
+  { value: '#4a5666', name: 'Gris' },
+  { value: '#0b2c54', name: 'Bleu marine' },
+  { value: '#e84e10', name: 'Orange CFDT' },
+  { value: '#1f8a5b', name: 'Vert' },
+  { value: '#c0392b', name: 'Rouge' },
 ];
 
 export interface PanelCallbacks {
@@ -156,7 +219,7 @@ export class EditPanel {
     return (
       `<div class="pf-header">` +
       `<span class="pf-title">${title}</span>` +
-      `<button type="button" class="pf-close" data-panel="close" title="Fermer">✕</button>` +
+      `<button type="button" class="pf-close" data-panel="close" title="Fermer">${ICONS.close}</button>` +
       `</div>`
     );
   }
@@ -169,28 +232,40 @@ export class EditPanel {
     );
   }
 
-  /** Champ riche (formatage WordPress-like : gras, listes…). */
+  /** Champ riche (formatage WordPress-like : gras, listes, alignement, lien, couleur…). */
   private richField(label: string, field: string): string {
-    const buttons = FORMAT_BUTTONS.map(
-      (b) =>
-        `<button type="button" class="pf-fmt-btn" data-cmd="${b.cmd}" title="${b.title}">${b.label}</button>`,
+    // Regroupe les boutons par `group`, séparés visuellement par un fin trait.
+    let lastGroup = FORMAT_BUTTONS[0]?.group ?? 0;
+    const buttons = FORMAT_BUTTONS.map((b) => {
+      const sep = b.group !== lastGroup ? '<span class="pf-fmt-sep"></span>' : '';
+      lastGroup = b.group;
+      const attr = 'special' in b ? `data-special="${b.special}"` : `data-cmd="${b.cmd}"`;
+      return `${sep}<button type="button" class="pf-fmt-btn" ${attr} title="${b.title}" aria-label="${b.title}">${b.label}</button>`;
+    }).join('');
+
+    const swatches = TEXT_COLORS.map(
+      (c) =>
+        `<button type="button" class="pf-swatch" data-color="${c.value}" title="${c.name}" aria-label="${c.name}" style="background:${c.value}"></button>`,
     ).join('');
+
     return (
       `<label class="pf-label">${label}</label>` +
-      `<div class="pf-fmt-bar">${buttons}</div>` +
+      `<div class="pf-fmt-bar">${buttons}` +
+      `<div class="pf-color-pop" hidden>${swatches}</div>` +
+      `</div>` +
       `<div class="pf-field pf-rich" contenteditable="true" data-mirror="${field}"></div>`
     );
   }
 
   private imageField(label: string, action: string, canRemove: boolean): string {
     const removeBtn = canRemove
-      ? `<button type="button" class="tbtn danger" data-panel="removeImage">Retirer</button>`
+      ? `<button type="button" class="tbtn danger" data-panel="removeImage">${ICONS.trash} Retirer</button>`
       : '';
     return (
       `<label class="pf-label">${label}</label>` +
       `<div class="pf-image"><img class="pf-image-preview" data-panel-preview="${action}" alt=""></div>` +
       `<div class="pf-row">` +
-      `<button type="button" class="tbtn primary" data-panel="image" data-image-action="${action}">🖼 Changer l'image</button>` +
+      `<button type="button" class="tbtn primary" data-panel="image" data-image-action="${action}">${ICONS.image} Changer l'image</button>` +
       removeBtn +
       `</div>`
     );
@@ -224,7 +299,7 @@ export class EditPanel {
       `</section>` +
       `<section class="pf-section">` +
       `<label class="pf-label">Encart mis en avant</label>` +
-      `<button type="button" class="tbtn" data-panel="toggleHighlight">${hasHighlight ? '− Retirer l’encart' : '+ Ajouter un encart'}</button>` +
+      `<button type="button" class="tbtn" data-panel="toggleHighlight">${hasHighlight ? `${ICONS.minus} Retirer l’encart` : `${ICONS.plus} Ajouter un encart`}</button>` +
       (hasHighlight ? `<div class="pf-highlight-field">${this.richField('Texte de l’encart', 'highlight')}</div>` : '') +
       `</section>` +
       `<section class="pf-section">` +
@@ -234,12 +309,12 @@ export class EditPanel {
       ` <select class="pf-select" data-panel="moveTo">${positionOptions}</select> / ${total}</label>` +
       `</div>` +
       `<div class="pf-row">` +
-      `<button type="button" class="tbtn" data-panel="moveUp"${index === 0 ? ' disabled' : ''}>↑ Monter</button>` +
-      `<button type="button" class="tbtn" data-panel="moveDown"${index === total - 1 ? ' disabled' : ''}>↓ Descendre</button>` +
+      `<button type="button" class="tbtn" data-panel="moveUp"${index === 0 ? ' disabled' : ''}>${ICONS.up} Monter</button>` +
+      `<button type="button" class="tbtn" data-panel="moveDown"${index === total - 1 ? ' disabled' : ''}>${ICONS.down} Descendre</button>` +
       `</div>` +
       `</section>` +
       `<section class="pf-section">` +
-      `<button type="button" class="tbtn danger pf-block" data-panel="delete">🗑 Supprimer cet article</button>` +
+      `<button type="button" class="tbtn danger pf-block" data-panel="delete">${ICONS.trash} Supprimer cet article</button>` +
       `</section>` +
       `</div>`
     );
@@ -347,6 +422,34 @@ export class EditPanel {
     return this.selection?.kind === 'article' ? this.selection.el : null;
   }
 
+  /**
+   * Exécute une commande de formatage sur le champ riche piloté par la barre
+   * qui contient `origin`, puis resynchronise ce champ vers la feuille. Le champ
+   * est le premier `[data-mirror]` qui suit la barre — robuste même si un
+   * élément (popover couleur) s'intercale entre la barre et le champ.
+   */
+  private applyFormat(origin: HTMLElement, cmd: string, value?: string): void {
+    const bar = origin.closest('.pf-fmt-bar');
+    let node = bar?.nextElementSibling as HTMLElement | null;
+    while (node && !node.matches('[data-mirror]')) node = node.nextElementSibling as HTMLElement | null;
+    if (!node) return;
+    node.focus();
+    document.execCommand(cmd, false, value);
+    this.syncField(node);
+  }
+
+  private toggleColorPopover(btn: HTMLElement): void {
+    const pop = btn.closest('.pf-fmt-bar')?.querySelector<HTMLElement>('.pf-color-pop');
+    if (!pop) return;
+    const wasOpen = !pop.hidden;
+    this.closeColorPopovers();
+    pop.hidden = wasOpen;
+  }
+
+  private closeColorPopovers(): void {
+    this.aside.querySelectorAll<HTMLElement>('.pf-color-pop').forEach((p) => (p.hidden = true));
+  }
+
   private bindEvents(): void {
     // Sync one-way des champs du panneau vers la feuille.
     this.aside.addEventListener('input', (e) => {
@@ -356,12 +459,33 @@ export class EditPanel {
 
     // Boutons de formatage : agissent sur le champ riche courant.
     this.aside.addEventListener('mousedown', (e) => {
+      const swatch = (e.target as HTMLElement).closest<HTMLElement>('.pf-swatch');
+      if (swatch) {
+        e.preventDefault(); // garde la sélection dans le champ
+        this.applyFormat(swatch, 'foreColor', swatch.dataset.color ?? '#000');
+        this.closeColorPopovers();
+        return;
+      }
       const btn = (e.target as HTMLElement).closest<HTMLElement>('.pf-fmt-btn');
       if (!btn) return;
       e.preventDefault(); // garde le focus/la sélection dans le champ
-      document.execCommand(btn.dataset.cmd ?? '', false);
-      const field = btn.parentElement?.nextElementSibling as HTMLElement | null;
-      if (field?.matches('[data-mirror]')) this.syncField(field);
+
+      const special = btn.dataset.special;
+      if (special === 'color') {
+        this.toggleColorPopover(btn);
+        return;
+      }
+      if (special === 'link') {
+        const url = window.prompt('Adresse du lien (URL) :', 'https://');
+        if (url) this.applyFormat(btn, 'createLink', url);
+        return;
+      }
+      this.applyFormat(btn, btn.dataset.cmd ?? '');
+    });
+
+    // Referme la palette de couleur au clic ailleurs.
+    document.addEventListener('mousedown', (e) => {
+      if (!(e.target as HTMLElement).closest('.pf-fmt-bar')) this.closeColorPopovers();
     });
 
     // Actions structurelles et images.

@@ -18,7 +18,8 @@ html {
   print-color-adjust: exact;
 }
 body {
-  font-family: 'Trebuchet MS', 'Segoe UI', Verdana, Helvetica, Arial, sans-serif;
+  font-family:
+    "Trebuchet MS", "Segoe UI", Verdana, Helvetica, Arial, sans-serif;
   color: var(--ink);
   background: #e9edf1;
   line-height: 1.34;
@@ -98,7 +99,9 @@ body {
   outline-offset: 2px;
   border-radius: 5px;
   cursor: text;
-  transition: outline-color 0.12s, background 0.12s;
+  transition:
+    outline-color 0.12s,
+    background 0.12s;
 }
 .editable:hover {
   outline-color: #c9d3dd;
@@ -243,7 +246,7 @@ body {
   overflow: hidden;
 }
 .mast::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -72px;
   left: -72px;
@@ -261,28 +264,18 @@ body {
   position: relative;
   z-index: 2;
 }
+.cfdt-logo-wrap {
+  background: #fff;
+  border-radius: 50%;
+}
 .cfdt-logo {
-  background: var(--orange);
-  color: #fff;
-  border-radius: 13px;
-  padding: 6px 11px 8px;
-  line-height: 0.9;
-  display: inline-flex;
-  align-items: flex-end;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  box-shadow: 0 3px 8px rgba(232, 78, 16, 0.35);
+  height: 100px;
+  width: auto;
+  display: block;
   flex: 0 0 auto;
 }
-.cfdt-logo span {
-  font-size: 23px;
-}
-.cfdt-logo b {
-  font-size: 23px;
-  margin-left: 1px;
-}
 .mast-org {
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--navy);
   line-height: 1.14;
@@ -550,18 +543,17 @@ body {
   flex: 0 0 auto;
 }
 .foot-logo {
-  background: #fff;
-  color: var(--orange);
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 8px;
-  font-weight: 800;
-  font-size: 17px;
-  line-height: 0.9;
+  flex: 0 0 auto;
+}
+.foot-logo img {
+  /* Disque blanc dont les lettres "Cfdt:" sont évidées : elles laissent
+     voir l'orange du bandeau à travers (cfdt-logo-footer.svg). */
+  width: 64px;
+  height: 64px;
+  display: block;
 }
 
 @media (max-width: 760px) {

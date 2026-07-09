@@ -8,13 +8,16 @@ const ICON_INFO = svgIcon(
   '<circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
   18,
 );
-const ICON_PEOPLE = svgIcon(
-  '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  28,
-);
+const ICON_PEOPLE =
+  '<svg width="52" height="36" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" fill="#ffffff">' +
+  '<circle cx="16" cy="10" r="6"/><path d="M4 34 C4 24 9 21 16 21 C23 21 28 24 28 34 Z"/>' +
+  '<circle cx="34" cy="8" r="5"/><path d="M26 30 C27 21 30 18.5 34 18.5 C39.5 18.5 43.5 21.5 43.5 30 Z" opacity=".92"/>' +
+  '<circle cx="48" cy="11" r="5.4"/><path d="M38.5 34 C38.5 25.5 43 22.5 48 22.5 C53.5 22.5 58 25.5 58 34 Z" opacity=".92"/>' +
+  '</svg>';
 const ICON_HAND = svgIcon(
-  '<path d="M9 11l2 2 3-3 4 4"/><path d="M3 12l4-4 3 3"/><circle cx="4" cy="7" r="1.6"/><circle cx="20" cy="9" r="1.6"/>',
+  '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>',
   28,
+  1.9,
 );
 
 export function articleHTML(a: Article): string {
@@ -50,7 +53,7 @@ export function fullHTML(state: Newsletter): string {
   return (
     `<header class="mast">` +
     `<div class="mast-left">` +
-    `<div class="img-wrap cfdt-logo-wrap"><div class="cfdt-logo"><span>cfdt</span><b>:</b></div></div>` +
+    `<div class="img-wrap cfdt-logo-wrap"><img class="cfdt-logo" src="/cfdt-logo.svg" alt="CFDT"></div>` +
     `<div class="mast-org editable" contenteditable="true" data-field="mastOrg">${state.mast.orgLines}</div>` +
     `</div>` +
     `<div class="mast-center">` +
@@ -92,7 +95,7 @@ export function fullHTML(state: Newsletter): string {
     `</section>` +
     `<footer class="foot">` +
     `<div class="foot-l">${ICON_PEOPLE}<span>POUR L'ÉGALITÉ<br>POUR LA JUSTICE SOCIALE</span></div>` +
-    `<div class="foot-logo">cfdt<b>:</b></div>` +
+    `<div class="foot-logo"><img src="/cfdt-logo-footer.svg" alt="CFDT"></div>` +
     `<div class="foot-r"><span>LA CFDT ENGAGÉE<br>À VOS CÔTÉS</span>${ICON_HAND}</div>` +
     `</footer>` +
     `</div>`

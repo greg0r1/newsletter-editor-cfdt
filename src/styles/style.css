@@ -222,14 +222,12 @@ body {
   }
 }
 
-/* ---------- LAYOUT SPLIT (feuille + panneau) ---------- */
-.app-body {
-  display: flex;
-  align-items: flex-start;
-}
+/* ---------- LAYOUT SPLIT (feuille + panneau) ----------
+   Le panneau (.edit-panel), sa poignée (.pf-resize-handle) et son voile
+   (.pf-scrim) sont tous en `position: fixed` (overlay, voir .edit-panel plus
+   bas) : ils ne participent plus au flux de .app-body. .wrap-outer est donc
+   le seul enfant en flux normal, pas besoin de flex ici. */
 .wrap-outer {
-  flex: 1 1 auto;
-  min-width: 0;
   padding: 36px 20px 80px;
 }
 /* Trame de points façon plan de travail — écran uniquement (jamais imprimée). */
@@ -596,42 +594,74 @@ body {
   display: block;
 }
 
-/* ---------- SIDE PANEL (édition contextuelle) ---------- */
+/* ---------- SIDE PANEL (édition contextuelle) ----------
+   Overlay en `position: fixed`, animé exclusivement via `transform`
+   (translateX) : pas de largeur/flex-basis qui varie, donc aucun reflow de
+   la feuille A4 pendant l'animation (composité GPU seul, jamais saccadé,
+   même avec beaucoup de contenu contenteditable derrière). La feuille reste
+   totalement immobile ; seule une ombre portée + un léger voile derrière le
+   panneau signalent l'ouverture. */
 .edit-panel {
-  flex: 0 0 0;
-  width: 0;
-  overflow: hidden;
-  align-self: stretch;
-  position: sticky;
-  /* Sous la toolbar (elle aussi sticky) : hauteur mesurée en JS, cf. main.ts. */
+  position: fixed;
   top: var(--toolbar-height, 0px);
-  max-height: calc(100vh - var(--toolbar-height, 0px));
+  right: 0;
+  bottom: 0;
+  width: var(--panel-width, 480px);
+  max-width: 70vw;
   display: flex;
   flex-direction: column;
   background: #fbfcfe;
   border-left: 1px solid var(--border);
-  box-shadow: -12px 0 32px rgba(11, 44, 84, 0.08);
-  z-index: 40;
-  transition: width 0.18s ease;
+  box-shadow: -16px 0 40px rgba(11, 44, 84, 0.16);
+  z-index: 140;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  visibility: hidden;
+  transition-property: transform, visibility;
+  transition-behavior: allow-discrete;
+  transition-duration: 0.32s, 0s;
+  transition-delay: 0s, 0.32s;
 }
 #appContent.panel-open .edit-panel {
-  --panel-width: 480px;
-  flex-basis: var(--panel-width);
-  width: var(--panel-width);
-  max-width: 70vw;
+  transform: translateX(0);
+  visibility: visible;
+  transition-delay: 0s, 0s;
 }
 body.panel-resizing .edit-panel {
   transition: none;
 }
+/* Voile derrière le panneau : clique pour fermer, signale visuellement le
+   changement de mode sans déplacer la feuille. */
+.pf-scrim {
+  position: fixed;
+  inset: var(--toolbar-height, 0px) 0 0 0;
+  background: rgba(11, 30, 54, 0.22);
+  z-index: 130;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#appContent.panel-open .pf-scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .edit-panel,
+  .pf-scrim {
+    transition: none !important;
+  }
+}
 .pf-resize-handle {
   display: none;
-  flex: 0 0 auto;
+  position: fixed;
+  top: var(--toolbar-height, 0px);
+  bottom: 0;
+  right: var(--panel-width, 480px);
   width: 6px;
   cursor: col-resize;
-  position: sticky;
-  top: var(--toolbar-height, 0px);
-  height: calc(100vh - var(--toolbar-height, 0px));
-  z-index: 41;
+  z-index: 141;
+  transform: translateX(3px);
 }
 .pf-resize-handle::after {
   content: "";
@@ -731,15 +761,131 @@ body.panel-resizing {
   border-radius: 8px;
   border: 3px solid #fbfcfe;
 }
+.pf-sections-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.pf-toggle-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.pf-toggle-all:hover {
+  background: #f4f7fb;
+  color: var(--navy);
+  border-color: #b6c2d0;
+}
+.pf-toggle-all:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+.pf-toggle-all-icon {
+  display: none;
+  width: 13px;
+  height: 13px;
+}
+.pf-toggle-all-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.pf-toggle-all-icon-collapse {
+  display: flex;
+}
+.pf-toggle-all.pf-all-collapsed .pf-toggle-all-icon-collapse {
+  display: none;
+}
+.pf-toggle-all.pf-all-collapsed .pf-toggle-all-icon-expand {
+  display: flex;
+}
 .pf-section {
-  padding-bottom: 18px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid #edf1f6;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+  overflow: hidden;
 }
 .pf-section:last-child {
-  padding-bottom: 0;
   margin-bottom: 0;
-  border-bottom: none;
+}
+.pf-section-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--navy);
+  transition: background 0.12s;
+}
+.pf-section-head:hover {
+  background: #f6f9fc;
+}
+.pf-section-head:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: -2px;
+}
+.pf-section-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--peach);
+  color: var(--orange);
+}
+.pf-section-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.pf-section-title {
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--navy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-section-chevron {
+  flex: 0 0 auto;
+  display: flex;
+  color: var(--ui-muted);
+  transition: transform 0.16s ease;
+}
+.pf-section-chevron svg {
+  width: 15px;
+  height: 15px;
+}
+.pf-section-body {
+  padding: 4px 14px 14px;
+  border-top: 1px solid #edf1f6;
+}
+.pf-section.pf-collapsed .pf-section-body {
+  display: none;
+}
+.pf-section.pf-collapsed .pf-section-chevron {
+  transform: rotate(-90deg);
+}
+.pf-section.pf-collapsed .pf-section-head {
+  padding-bottom: 11px;
 }
 .pf-label {
   display: block;
@@ -997,19 +1143,11 @@ body.panel-resizing {
 
 @media (max-width: 760px) {
   .edit-panel {
-    position: fixed;
     inset: 0;
+    top: 0;
     width: auto;
-    max-height: none;
-    flex-basis: auto;
+    max-width: none;
     border-left: none;
-    z-index: 120;
-    transform: translateX(100%);
-    transition: transform 0.2s ease;
-  }
-  #appContent.panel-open .edit-panel {
-    width: auto;
-    transform: translateX(0);
   }
   .pf-resize-handle {
     display: none !important;

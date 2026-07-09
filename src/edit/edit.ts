@@ -21,6 +21,7 @@ export class Editor {
     saveIndicator: HTMLElement;
     fileInput: HTMLInputElement;
     panelAside: HTMLElement;
+    panelScrim?: HTMLElement | null;
     appContent: HTMLElement;
   }) {
     this.root = options.root;
@@ -30,6 +31,7 @@ export class Editor {
       aside: options.panelAside,
       root: this.root,
       appContent: options.appContent,
+      scrim: options.panelScrim,
       callbacks: {
         onChange: () => this.save(),
         onRequestImage: (kind, articleEl) => this.requestImage(kind, articleEl),

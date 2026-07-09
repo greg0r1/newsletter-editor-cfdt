@@ -64,6 +64,13 @@ const ICONS = {
   down: icon('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'),
   plus: icon('<path d="M12 5v14M5 12h14"/>'),
   minus: icon('<path d="M5 12h14"/>'),
+  chevron: icon('<path d="m6 9 6 6 6-6"/>'),
+  collapseAll: icon('<path d="m7 20 5-5 5 5"/><path d="m7 9 5-5 5 5"/>'),
+  expandAll: icon('<path d="m7 15 5 5 5-5"/><path d="m7 4 5 5 5-5"/>'),
+  type: icon('<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>'),
+  text: icon('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/>'),
+  star: icon('<path d="M12 3.5 14.5 9.4 21 10l-5 4.6L17.4 21 12 17.7 6.6 21 8 14.6 3 10l6.5-.6Z"/>'),
+  move: icon('<path d="M12 2v20M2 12h20"/><path d="m5 9-3 3 3 3M19 9l3 3-3 3M9 5l3-3 3 3M9 19l3 3 3-3"/>'),
 };
 
 /**
@@ -127,18 +134,28 @@ export class EditPanel {
   private root: HTMLElement;
   private cb: PanelCallbacks;
   private appContent: HTMLElement;
+  private scrim: HTMLElement | null;
   private selection: Selection | null = null;
   private dirty = false;
+  /**
+   * Sections repliées, par id (ex. "article:image"). Partagée entre toutes
+   * les sélections/re-rendus du panneau (persiste tant que la page n'est pas
+   * rechargée) : replier "Position" sur un article doit rester replié en
+   * rouvrant un autre article.
+   */
+  private collapsed = new Set<string>();
 
   constructor(opts: {
     aside: HTMLElement;
     root: HTMLElement;
     appContent: HTMLElement;
+    scrim?: HTMLElement | null;
     callbacks: PanelCallbacks;
   }) {
     this.aside = opts.aside;
     this.root = opts.root;
     this.appContent = opts.appContent;
+    this.scrim = opts.scrim ?? null;
     this.cb = opts.callbacks;
     this.bindEvents();
   }
@@ -157,8 +174,15 @@ export class EditPanel {
     this.selection = null;
     this.dirty = false;
     this.clearSelectedMarker();
-    this.aside.innerHTML = '';
     this.appContent.classList.remove('panel-open');
+    // Laisse le contenu en place le temps de l'animation de sortie (slide),
+    // pour éviter qu'il ne disparaisse d'un coup pendant que le panneau glisse
+    // encore hors champ. Vidé une fois la transition CSS terminée (320ms,
+    // cf. .edit-panel dans style.css — garder ces deux durées synchronisées).
+    const aside = this.aside;
+    window.setTimeout(() => {
+      if (!this.selection) aside.innerHTML = '';
+    }, 340);
   }
 
   private render(sel: Selection): void {
@@ -225,6 +249,39 @@ export class EditPanel {
     }
   }
 
+  /**
+   * Section repliable du panneau. `id` doit être unique dans le panneau
+   * courant (sert de clé de persistance de l'état ouvert/fermé, voir
+   * `SECTION_COLLAPSE_KEY`). Repliée par défaut si `id` est dans
+   * `this.collapsed`, sinon dépliée.
+   */
+  private section(id: string, title: string, iconSvg: string, bodyHtml: string): string {
+    const isCollapsed = this.collapsed.has(id);
+    return (
+      `<section class="pf-section${isCollapsed ? ' pf-collapsed' : ''}" data-section="${id}">` +
+      `<button type="button" class="pf-section-head" data-panel="toggleSection" data-section-id="${id}" aria-expanded="${!isCollapsed}">` +
+      `<span class="pf-section-icon">${iconSvg}</span>` +
+      `<span class="pf-section-title">${title}</span>` +
+      `<span class="pf-section-chevron">${ICONS.chevron}</span>` +
+      `</button>` +
+      `<div class="pf-section-body">${bodyHtml}</div>` +
+      `</section>`
+    );
+  }
+
+  /** Bouton "Tout réduire / Tout déplier" en tête du corps du panneau. */
+  private sectionsToolbar(): string {
+    return (
+      `<div class="pf-sections-toolbar">` +
+      `<button type="button" class="pf-toggle-all" data-panel="toggleAllSections">` +
+      `<span class="pf-toggle-all-icon pf-toggle-all-icon-collapse">${ICONS.collapseAll}</span>` +
+      `<span class="pf-toggle-all-icon pf-toggle-all-icon-expand">${ICONS.expandAll}</span>` +
+      `<span class="pf-toggle-all-label"></span>` +
+      `</button>` +
+      `</div>`
+    );
+  }
+
   private header(title: string): string {
     return (
       `<div class="pf-header">` +
@@ -236,10 +293,16 @@ export class EditPanel {
     );
   }
 
-  /** Champ texte simple (une ligne, pas de formatage riche). */
+  /**
+   * Champ texte simple (une ligne, pas de formatage riche). `label` est
+   * facultatif : dans une section repliable, le titre de la section suffit
+   * déjà, un `pf-label` redondant n'est ajouté que si `label` est fourni
+   * (ex. champs multiples dans une même section, cas inexistant aujourd'hui
+   * mais gardé pour la réutilisabilité de la méthode).
+   */
   private textField(label: string, field: string, single = true): string {
     return (
-      `<label class="pf-label">${label}</label>` +
+      (label ? `<label class="pf-label">${label}</label>` : '') +
       `<div class="pf-field${single ? ' pf-single' : ''}" contenteditable="true" data-mirror="${field}"></div>`
     );
   }
@@ -261,7 +324,7 @@ export class EditPanel {
     ).join('');
 
     return (
-      `<label class="pf-label">${label}</label>` +
+      (label ? `<label class="pf-label">${label}</label>` : '') +
       `<div class="pf-fmt-bar">${buttons}` +
       `<div class="pf-color-pop" hidden>${swatches}</div>` +
       `</div>` +
@@ -274,7 +337,7 @@ export class EditPanel {
       ? `<button type="button" class="tbtn danger" data-panel="removeImage">${ICONS.trash} Retirer</button>`
       : '';
     return (
-      `<label class="pf-label">${label}</label>` +
+      (label ? `<label class="pf-label">${label}</label>` : '') +
       `<div class="pf-image"><img class="pf-image-preview" data-panel-preview="${action}" alt=""></div>` +
       `<div class="pf-row">` +
       `<button type="button" class="tbtn primary" data-panel="image" data-image-action="${action}">${ICONS.image} Changer l'image</button>` +
@@ -297,25 +360,7 @@ export class EditPanel {
       .map((_, i) => `<option value="${i}"${i === index ? ' selected' : ''}>${i + 1}</option>`)
       .join('');
 
-    return (
-      this.header(`Article ${index + 1}`) +
-      `<div class="pf-body">` +
-      `<section class="pf-section">` +
-      this.textField('Titre', 'title') +
-      `</section>` +
-      `<section class="pf-section">` +
-      this.imageField(hasImage ? 'Image' : 'Image (aucune)', 'article', hasImage) +
-      `</section>` +
-      `<section class="pf-section">` +
-      this.richField('Texte de l’article', 'body') +
-      `</section>` +
-      `<section class="pf-section">` +
-      `<label class="pf-label">Encart mis en avant</label>` +
-      `<button type="button" class="tbtn" data-panel="toggleHighlight">${hasHighlight ? `${ICONS.minus} Retirer l’encart` : `${ICONS.plus} Ajouter un encart`}</button>` +
-      (hasHighlight ? `<div class="pf-highlight-field">${this.richField('Texte de l’encart', 'highlight')}</div>` : '') +
-      `</section>` +
-      `<section class="pf-section">` +
-      `<label class="pf-label">Position dans la liste</label>` +
+    const positionBody =
       `<div class="pf-row">` +
       `<label class="pf-inline">Placer en position` +
       ` <select class="pf-select" data-panel="moveTo">${positionOptions}</select> / ${total}</label>` +
@@ -323,11 +368,22 @@ export class EditPanel {
       `<div class="pf-row">` +
       `<button type="button" class="tbtn" data-panel="moveUp"${index === 0 ? ' disabled' : ''}>${ICONS.up} Monter</button>` +
       `<button type="button" class="tbtn" data-panel="moveDown"${index === total - 1 ? ' disabled' : ''}>${ICONS.down} Descendre</button>` +
-      `</div>` +
-      `</section>` +
-      `<section class="pf-section">` +
-      `<button type="button" class="tbtn danger pf-block" data-panel="delete">${ICONS.trash} Supprimer cet article</button>` +
-      `</section>` +
+      `</div>`;
+
+    const highlightBody =
+      `<button type="button" class="tbtn" data-panel="toggleHighlight">${hasHighlight ? `${ICONS.minus} Retirer l’encart` : `${ICONS.plus} Ajouter un encart`}</button>` +
+      (hasHighlight ? `<div class="pf-highlight-field">${this.richField('Texte de l’encart', 'highlight')}</div>` : '');
+
+    return (
+      this.header(`Article ${index + 1}`) +
+      `<div class="pf-body">` +
+      this.sectionsToolbar() +
+      this.section('article:title', 'Titre', ICONS.type, this.textField('', 'title')) +
+      this.section('article:image', hasImage ? 'Image' : 'Image (aucune)', ICONS.image, this.imageField('', 'article', hasImage)) +
+      this.section('article:body', 'Texte de l’article', ICONS.text, this.richField('', 'body')) +
+      this.section('article:highlight', 'Encart mis en avant', ICONS.star, highlightBody) +
+      this.section('article:position', 'Position dans la liste', ICONS.move, positionBody) +
+      this.section('article:delete', 'Supprimer', ICONS.trash, `<button type="button" class="tbtn danger pf-block" data-panel="delete">${ICONS.trash} Supprimer cet article</button>`) +
       `</div>`
     );
   }
@@ -336,11 +392,12 @@ export class EditPanel {
     return (
       this.header('En-tête (bandeau)') +
       `<div class="pf-body">` +
-      `<section class="pf-section">${this.textField('Organisation', 'mastOrg', false)}</section>` +
-      `<section class="pf-section">${this.textField('Titre — accent (orange)', 'titleAccent')}</section>` +
-      `<section class="pf-section">${this.textField('Titre — suite', 'titleRest')}</section>` +
-      `<section class="pf-section">${this.textField('Période', 'period')}</section>` +
-      `<section class="pf-section">${this.imageField('Image', 'mast', false)}</section>` +
+      this.sectionsToolbar() +
+      this.section('mast:org', 'Organisation', ICONS.type, this.textField('', 'mastOrg', false)) +
+      this.section('mast:titleAccent', 'Titre — accent (orange)', ICONS.type, this.textField('', 'titleAccent')) +
+      this.section('mast:titleRest', 'Titre — suite', ICONS.type, this.textField('', 'titleRest')) +
+      this.section('mast:period', 'Période', ICONS.type, this.textField('', 'period')) +
+      this.section('mast:image', 'Image', ICONS.image, this.imageField('', 'mast', false)) +
       `</div>`
     );
   }
@@ -349,10 +406,11 @@ export class EditPanel {
     return (
       this.header('Édito') +
       `<div class="pf-body">` +
-      `<section class="pf-section">${this.textField('Accroche', 'editoHello')}</section>` +
-      `<section class="pf-section">${this.richField('Texte', 'editoBody')}</section>` +
-      `<section class="pf-section">${this.textField('Signature', 'editoSign')}</section>` +
-      `<section class="pf-section">${this.imageField('Image', 'edito', false)}</section>` +
+      this.sectionsToolbar() +
+      this.section('edito:hello', 'Accroche', ICONS.type, this.textField('', 'editoHello')) +
+      this.section('edito:body', 'Texte', ICONS.text, this.richField('', 'editoBody')) +
+      this.section('edito:sign', 'Signature', ICONS.type, this.textField('', 'editoSign')) +
+      this.section('edito:image', 'Image', ICONS.image, this.imageField('', 'edito', false)) +
       `</div>`
     );
   }
@@ -361,8 +419,8 @@ export class EditPanel {
     return (
       this.header('Informations pratiques') +
       `<div class="pf-body">` +
-      `<section class="pf-section">${this.textField('Titre', 'infoTitle')}</section>` +
-      `<section class="pf-section">${this.richField('Texte', 'infoBody')}</section>` +
+      this.section('info:title', 'Titre', ICONS.type, this.textField('', 'infoTitle')) +
+      this.section('info:body', 'Texte', ICONS.text, this.richField('', 'infoBody')) +
       `</div>`
     );
   }
@@ -371,10 +429,11 @@ export class EditPanel {
     return (
       this.header('Encart de clôture') +
       `<div class="pf-body">` +
-      `<section class="pf-section">${this.textField('Titre', 'summerTitle')}</section>` +
-      `<section class="pf-section">${this.richField('Texte', 'summerBody')}</section>` +
-      `<section class="pf-section">${this.textField('Signature', 'summerSign')}</section>` +
-      `<section class="pf-section">${this.imageField('Image', 'summer', false)}</section>` +
+      this.sectionsToolbar() +
+      this.section('summer:title', 'Titre', ICONS.type, this.textField('', 'summerTitle')) +
+      this.section('summer:body', 'Texte', ICONS.text, this.richField('', 'summerBody')) +
+      this.section('summer:sign', 'Signature', ICONS.type, this.textField('', 'summerSign')) +
+      this.section('summer:image', 'Image', ICONS.image, this.imageField('', 'summer', false)) +
       `</div>`
     );
   }
@@ -406,6 +465,8 @@ export class EditPanel {
       if (src) preview.src = src;
       else preview.closest('.pf-image')?.classList.add('pf-image-empty');
     });
+
+    this.refreshToggleAllButton();
   }
 
   private imageSrcFor(action: string): string | null {
@@ -440,6 +501,53 @@ export class EditPanel {
     this.dirty = false;
     this.aside.querySelector<HTMLElement>('.pf-dirty')?.setAttribute('hidden', '');
     this.cb.onChange();
+  }
+
+  /**
+   * Replie/déplie une section sans passer par un re-rendu complet (`render()`
+   * viderait/recréerait les champs et perdrait la sélection de texte en cours).
+   * Bascule directement la classe CSS et l'état ARIA sur les éléments existants.
+   */
+  private toggleSection(id: string): void {
+    if (!id) return;
+    const section = this.aside.querySelector<HTMLElement>(`[data-section="${id}"]`);
+    if (!section) return;
+    const willCollapse = !section.classList.contains('pf-collapsed');
+    section.classList.toggle('pf-collapsed', willCollapse);
+    section.querySelector('.pf-section-head')?.setAttribute('aria-expanded', String(!willCollapse));
+    if (willCollapse) this.collapsed.add(id);
+    else this.collapsed.delete(id);
+    this.refreshToggleAllButton();
+  }
+
+  /**
+   * Réduit toutes les sections si au moins une est actuellement dépliée,
+   * sinon les déplie toutes (comportement "tout réduire" prioritaire, cohérent
+   * avec l'icône affichée par `refreshToggleAllButton()`).
+   */
+  private toggleAllSections(): void {
+    const sections = this.aside.querySelectorAll<HTMLElement>('[data-section]');
+    const shouldCollapse = Array.from(sections).some((s) => !s.classList.contains('pf-collapsed'));
+    sections.forEach((section) => {
+      section.classList.toggle('pf-collapsed', shouldCollapse);
+      section.querySelector('.pf-section-head')?.setAttribute('aria-expanded', String(!shouldCollapse));
+      const id = section.dataset.section;
+      if (!id) return;
+      if (shouldCollapse) this.collapsed.add(id);
+      else this.collapsed.delete(id);
+    });
+    this.refreshToggleAllButton();
+  }
+
+  /** Bascule l'icône/label du bouton "Tout réduire/déplier" selon l'état courant. */
+  private refreshToggleAllButton(): void {
+    const btn = this.aside.querySelector<HTMLElement>('.pf-toggle-all');
+    if (!btn) return;
+    const sections = this.aside.querySelectorAll('[data-section]');
+    const anyExpanded = Array.from(sections).some((s) => !s.classList.contains('pf-collapsed'));
+    btn.classList.toggle('pf-all-collapsed', !anyExpanded);
+    const label = btn.querySelector('.pf-toggle-all-label');
+    if (label) label.textContent = anyExpanded ? 'Tout réduire' : 'Tout déplier';
   }
 
   // ---------------------------------------------------------------- events
@@ -477,6 +585,10 @@ export class EditPanel {
   }
 
   private bindEvents(): void {
+    // Voile derrière le panneau (overlay) : clic pour fermer, comme un clic
+    // en dehors d'une modale.
+    this.scrim?.addEventListener('click', () => this.close());
+
     // La frappe ne touche que le champ du panneau : la feuille et le serveur
     // ne sont mis à jour qu'au clic sur "Enregistrer" (voir saveAll()).
     this.aside.addEventListener('input', (e) => {
@@ -555,6 +667,12 @@ export class EditPanel {
             this.refresh();
           }
           break;
+        case 'toggleSection':
+          this.toggleSection(btn.dataset.sectionId ?? '');
+          break;
+        case 'toggleAllSections':
+          this.toggleAllSections();
+          break;
       }
     });
 
@@ -578,8 +696,14 @@ const PANEL_WIDTH_STORAGE_KEY = 'editPanelWidth';
  * en sessionStorage pour survivre à un rechargement de page.
  */
 export function bindPanelResize(handle: HTMLElement, aside: HTMLElement): void {
+  // Posée sur <html> plutôt que sur `aside` : `.pf-resize-handle` (poignée)
+  // et `.edit-panel` sont des frères en `position: fixed` (overlay, voir
+  // style.css), pas parent/enfant — la variable doit donc être visible depuis
+  // la racine pour que les deux la lisent (le CSS custom property hérite
+  // par arbre DOM, pas par proximité visuelle).
+  const rootStyle = document.documentElement.style;
   const stored = Number(sessionStorage.getItem(PANEL_WIDTH_STORAGE_KEY));
-  if (stored) aside.style.setProperty('--panel-width', `${clampWidth(stored)}px`);
+  if (stored) rootStyle.setProperty('--panel-width', `${clampWidth(stored)}px`);
 
   function clampWidth(w: number): number {
     const max = Math.min(PANEL_MAX_WIDTH, window.innerWidth * 0.7);
@@ -594,7 +718,7 @@ export function bindPanelResize(handle: HTMLElement, aside: HTMLElement): void {
 
     function onMove(ev: MouseEvent): void {
       const width = clampWidth(startWidth - (ev.clientX - startX));
-      aside.style.setProperty('--panel-width', `${width}px`);
+      rootStyle.setProperty('--panel-width', `${width}px`);
     }
     function onUp(): void {
       document.body.classList.remove('panel-resizing');

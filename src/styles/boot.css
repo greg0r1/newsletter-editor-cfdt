@@ -1,0 +1,23 @@
+/* Masque le contenu (pas le body entier) tant que le CSS/JS ne sont pas prêts,
+   pour éviter le flash de contenu non stylé. Le loader reste visible pendant ce
+   temps, donc la page n'est jamais silencieusement vide si le chargement traîne
+   ou échoue — voir src/main.ts. */
+#appContent.loading {
+  visibility: hidden;
+}
+
+#bootLoader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Trebuchet MS", "Segoe UI", Verdana, Helvetica, Arial, sans-serif;
+  background: #fdf3e9;
+  color: #0b2c54;
+  font-size: 15px;
+}
+
+#bootLoader.hidden {
+  display: none;
+}

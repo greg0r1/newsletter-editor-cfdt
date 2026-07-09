@@ -4,66 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Connexion — ACTU UD CFDT 06</title>
-<style>
-  :root { --orange:#E84E10; --navy:#0B2C54; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: "Trebuchet MS", "Segoe UI", Verdana, Helvetica, Arial, sans-serif;
-    background: var(--navy);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  form {
-    background: #fff;
-    border-radius: 14px;
-    padding: 32px 28px;
-    width: 100%;
-    max-width: 320px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.25);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  h1 { font-size: 15px; color: var(--navy); text-align: center; margin-bottom: 4px; }
-  input {
-    padding: 10px 12px;
-    border: 1.5px solid #d8dee5;
-    border-radius: 8px;
-    font-size: 14px;
-    width: 100%;
-  }
-  input:focus { outline: none; border-color: var(--orange); }
-  .password-field { position: relative; }
-  .password-field input { padding-right: 40px; }
-  .toggle-password {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    padding: 6px 8px;
-    font-size: 15px;
-    line-height: 1;
-    cursor: pointer;
-    color: #6b7684;
-  }
-  .toggle-password:hover { background: none; color: var(--navy); }
-  button {
-    background: var(--orange);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  button:hover { background: #ff5c1e; }
-  .error { color: #c0392b; font-size: 12.5px; text-align: center; min-height: 16px; }
-</style>
+<link rel="stylesheet" href="/login/style.css" />
 </head>
 <body>
 <form id="loginForm">

@@ -1,6 +1,6 @@
-import type { Article, Newsletter } from './state';
-import { articleHTML, renumber } from './render';
-import { saveNewsletter, uploadImage } from './api';
+import type { Article, Newsletter } from '../state/state';
+import { articleHTML, renumber } from '../render/render';
+import { saveNewsletter, uploadImage } from '../api/api';
 import { compressImage } from './image';
 
 const RICH_FIELDS = new Set(['body', 'editoBody', 'infoBody', 'summerBody', 'highlight']);

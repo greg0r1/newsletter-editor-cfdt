@@ -1,4 +1,4 @@
-import type { Newsletter } from './state';
+import type { Newsletter } from '../state/state';
 
 export function exportJSON(newsletter: Newsletter): void {
   const blob = new Blob([JSON.stringify(newsletter, null, 2)], { type: 'application/json' });

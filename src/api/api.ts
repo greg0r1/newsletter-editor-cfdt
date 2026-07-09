@@ -1,4 +1,4 @@
-import type { Article, ArticleVersion, Newsletter } from './state';
+import type { Article, ArticleVersion, Newsletter } from '../state/state';
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, {

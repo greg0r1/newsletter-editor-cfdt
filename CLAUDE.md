@@ -49,21 +49,26 @@ mot de passe.
   template front, jamais éditable, jamais stocké.
 
 ### Front (`src/`)
-- `src/state.ts` — types du modèle de données (Newsletter, Article, EditoBlock,
-  InfoBox, SummerBox), miroir du schéma Supabase côté TypeScript.
-- `src/render.ts` — fonctions de rendu (état → HTML). Utilisées uniquement pour
-  le rendu initial (après fetch de `/api/newsletter`), l'import, le reset. Les
-  opérations structurelles (ajout/suppression d'article, changement d'image,
-  toggle encart) manipulent le DOM directement (insertBefore/remove), SANS
-  re-render complet, pour ne pas perdre le focus ailleurs sur la page.
-- `src/edit.ts` — délégation d'événements (`input`, `click`) + sauvegarde
+Organisé par couche technique, un sous-dossier par responsabilité :
+- `src/state/state.ts` — types du modèle de données (Newsletter, Article,
+  EditoBlock, InfoBox, SummerBox), miroir du schéma Supabase côté TypeScript.
+- `src/render/render.ts` — fonctions de rendu (état → HTML). Utilisées
+  uniquement pour le rendu initial (après fetch de `/api/newsletter`),
+  l'import, le reset. Les opérations structurelles (ajout/suppression
+  d'article, changement d'image, toggle encart) manipulent le DOM directement
+  (insertBefore/remove), SANS re-render complet, pour ne pas perdre le focus
+  ailleurs sur la page.
+- `src/edit/edit.ts` — délégation d'événements (`input`, `click`) + sauvegarde
   debounced (~700ms) à chaque frappe dans un champ `.editable`, qui appelle
   `PUT /api/newsletter` (ou `/api/articles` pour un article précis).
-- `src/api.ts` — petit client fetch typé vers les routes `/api/*` (pas de
+- `src/edit/image.ts` — compression d'image côté client avant upload.
+- `src/api/api.ts` — petit client fetch typé vers les routes `/api/*` (pas de
   librairie HTTP superflue, `fetch` natif suffit).
-- `src/importExport.ts` — export JSON (Blob + lien de téléchargement),
+- `src/api/importExport.ts` — export JSON (Blob + lien de téléchargement),
   import JSON (FileReader + validation basique du schéma avant envoi à l'API).
-- `src/print.css` — règles d'impression, voir section dédiée ci-dessous.
+- `src/styles/` — `style.css` (app), `print.css` (règles d'impression, voir
+  section dédiée ci-dessous), `boot.css` (écran de chargement initial).
+- `src/main.ts` — point d'entrée, câble les modules ci-dessus entre eux.
 - `middleware.ts` à la racine du projet (Routing Middleware Vercel, convention
   2026 : export par défaut `function middleware(request: Request): Response`,
   `export const config = { runtime: 'nodejs', matcher: [...] }`, on continue la
@@ -76,6 +81,27 @@ mot de passe.
   retournant un `Response`/`Response.json(...)`. Ne pas utiliser
   `@vercel/node`/`VercelRequest`/`VercelResponse` (ancienne convention) sauf
   besoin spécifique non couvert par l'API Web standard.
+
+## Évolution vers une séparation DDD
+Le projet reste volontairement en couches techniques (state / render / edit /
+api) tant qu'il n'y a qu'un seul agrégat métier (la Newsletter et ses
+Articles) et peu de règles métier. Direction cible à mesure que ça grossit
+(nouveaux types de contenu, règles de validation plus riches, invariants
+métier) : séparer par responsabilité DDD plutôt que par couche technique pure.
+- **Domaine** — règles métier pures, sans DOM ni réseau (ex : validation d'un
+  article, contraintes de longueur, règles de pagination/positionnement).
+  N'existe pas encore comme dossier dédié : ce type de logique est aujourd'hui
+  dilué dans `render.ts`/`edit.ts`. Créer `src/domain/` seulement quand une
+  vraie règle métier émerge en dehors du simple mapping DOM ↔ état.
+- **Infrastructure** — accès Supabase, Vercel Blob, fetch. Déjà isolée dans
+  `api/` (backend, clé service role) et `src/api/` (client front).
+- **Présentation** — DOM, contenteditable, délégation d'événements.
+  `src/edit/`, `src/render/`.
+- Ne pas réorganiser en `src/domain/` / `src/infrastructure/` /
+  `src/presentation/` de manière prématurée : ce découpage n'apporte rien tant
+  qu'il n'y a qu'un seul agrégat et pas de vraie logique métier à isoler.
+  Attendre un signal concret (règle métier qui se répète, validation qui
+  grossit) avant de migrer.
 
 ## Règles CSS d'impression (validées empiriquement, ne pas changer sans tester)
 - `@page { size: A4; margin: 0; }` — les marges visuelles viennent des paddings

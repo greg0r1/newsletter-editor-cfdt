@@ -1,4 +1,4 @@
-import type { Article, Newsletter } from './state';
+import type { Article, Newsletter } from '../state/state';
 
 function svgIcon(paths: string, w = 16, sw = 2): string {
   return `<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;

@@ -1,10 +1,10 @@
-import './style.css';
-import './print.css';
-import type { Newsletter } from './state';
-import { renderAll } from './render';
-import { Editor } from './edit';
-import { getNewsletter, saveNewsletter, logout } from './api';
-import { exportJSON, importJSON } from './importExport';
+import './styles/style.css';
+import './styles/print.css';
+import type { Newsletter } from './state/state';
+import { renderAll } from './render/render';
+import { Editor } from './edit/edit';
+import { getNewsletter, saveNewsletter, logout } from './api/api';
+import { exportJSON, importJSON } from './api/importExport';
 
 const root = document.getElementById('newsletterRoot') as HTMLElement;
 const saveIndicator = document.getElementById('saveIndicator') as HTMLElement;

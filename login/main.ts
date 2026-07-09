@@ -1,4 +1,4 @@
-import { login } from '../src/api';
+import { login } from '../src/api/api';
 
 const form = document.getElementById('loginForm') as HTMLFormElement;
 const passwordInput = document.getElementById('password') as HTMLInputElement;

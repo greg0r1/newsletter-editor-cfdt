@@ -22,26 +22,19 @@ const ICON_HAND = svgIcon(
 
 export function articleHTML(a: Article): string {
   const imgBlock = a.imageUrl
-    ? `<div class="img-wrap"><img class="art-img" src="${a.imageUrl}">` +
-      `<button class="mini-btn img-btn no-print" data-action="changeImage" title="Changer l'image">🖼 Changer</button></div>`
-    : `<div class="no-img-placeholder no-print" data-action="changeImage">🖼 Ajouter une image</div>`;
+    ? `<div class="img-wrap"><img class="art-img" src="${a.imageUrl}"></div>`
+    : '';
 
   const highlight =
     a.highlight != null
-      ? `<div class="art-highlight editable" contenteditable="true" data-field="highlight">${a.highlight}</div>`
+      ? `<div class="art-highlight" data-field="highlight">${a.highlight}</div>`
       : '';
 
   return (
-    `<article class="art" data-id="${a.id}">` +
-    `<div class="art-toolbar no-print">` +
-    `<button class="mini-btn" data-action="moveUp" title="Monter">↑</button>` +
-    `<button class="mini-btn" data-action="moveDown" title="Descendre">↓</button>` +
-    `<button class="mini-btn" data-action="toggleHighlight" title="Encart mis en avant">${a.highlight != null ? '− encart' : '+ encart'}</button>` +
-    `<button class="mini-btn del" data-action="deleteArticle" title="Supprimer">🗑</button>` +
-    `</div>` +
-    `<div class="art-head"><span class="num"></span><h3 class="editable" contenteditable="true" data-field="title">${a.title}</h3></div>` +
+    `<article class="art selectable" data-id="${a.id}">` +
+    `<div class="art-head"><span class="num"></span><h3 data-field="title">${a.title}</h3></div>` +
     imgBlock +
-    `<div class="art-body editable" contenteditable="true" data-field="body">${a.body}</div>` +
+    `<div class="art-body" data-field="body">${a.body}</div>` +
     highlight +
     `</article>`
   );
@@ -51,46 +44,42 @@ export function fullHTML(state: Newsletter): string {
   const articlesHtml = state.articles.map(articleHTML).join('');
 
   return (
-    `<header class="mast">` +
+    `<header class="mast selectable" data-block="mast">` +
     `<div class="mast-left">` +
     `<div class="img-wrap cfdt-logo-wrap"><img class="cfdt-logo" src="/cfdt-logo.svg" alt="CFDT"></div>` +
-    `<div class="mast-org editable" contenteditable="true" data-field="mastOrg">${state.mast.orgLines}</div>` +
+    `<div class="mast-org" data-field="mastOrg">${state.mast.orgLines}</div>` +
     `</div>` +
     `<div class="mast-center">` +
     `<div class="mast-title">` +
-    `<span class="o editable" contenteditable="true" data-field="titleAccent">${state.mast.titleAccent}</span>` +
-    ` <span class="editable" contenteditable="true" data-field="titleRest">${state.mast.titleRest}</span>` +
+    `<span class="o" data-field="titleAccent">${state.mast.titleAccent}</span>` +
+    ` <span data-field="titleRest">${state.mast.titleRest}</span>` +
     `</div>` +
-    `<span class="mast-pill editable" contenteditable="true" data-field="period">${state.mast.period}</span>` +
+    `<span class="mast-pill" data-field="period">${state.mast.period}</span>` +
     `</div>` +
-    `<div class="mast-right img-wrap"><img src="${state.mast.image}">` +
-    `<button class="mini-btn img-btn no-print" data-action="changeMastImage" title="Changer l'image">🖼 Changer</button></div>` +
+    `<div class="mast-right img-wrap"><img src="${state.mast.image}"></div>` +
     `</header>` +
-    `<section class="edito">` +
-    `<div class="edito-sun img-wrap"><img src="${state.edito.image}">` +
-    `<button class="mini-btn img-btn no-print" data-action="changeEditoImage" title="Changer l'image">🖼 Changer</button></div>` +
+    `<section class="edito selectable" data-block="edito">` +
+    `<div class="edito-sun img-wrap"><img src="${state.edito.image}"></div>` +
     `<div class="edito-txt">` +
-    `<span class="hello editable" contenteditable="true" data-field="editoHello">${state.edito.hello}</span>` +
-    `<div class="edito-body editable" contenteditable="true" data-field="editoBody">${state.edito.body}</div>` +
-    `<span class="sign editable" contenteditable="true" data-field="editoSign">${state.edito.signature}</span>` +
+    `<span class="hello" data-field="editoHello">${state.edito.hello}</span>` +
+    `<div class="edito-body" data-field="editoBody">${state.edito.body}</div>` +
+    `<span class="sign" data-field="editoSign">${state.edito.signature}</span>` +
     `</div>` +
     `</section>` +
     `<div class="articles" id="articlesContainer">` +
     articlesHtml +
-    `<div class="add-art-btn no-print" data-action="addArticle">＋ Ajouter un article</div>` +
     `</div>` +
     `<div class="tail">` +
     `<section class="bottom">` +
-    `<div class="box box-info">` +
-    `<div class="box-head"><span class="bh-ic">${ICON_INFO}</span><h4 class="editable" contenteditable="true" data-field="infoTitle">${state.infoBox.title}</h4></div>` +
-    `<div class="box-body editable" contenteditable="true" data-field="infoBody">${state.infoBox.body}</div>` +
+    `<div class="box box-info selectable" data-block="info">` +
+    `<div class="box-head"><span class="bh-ic">${ICON_INFO}</span><h4 data-field="infoTitle">${state.infoBox.title}</h4></div>` +
+    `<div class="box-body" data-field="infoBody">${state.infoBox.body}</div>` +
     `</div>` +
-    `<div class="box box-summer">` +
+    `<div class="box box-summer selectable" data-block="summer">` +
     `<div class="box-head img-wrap"><img class="sun-mini" src="${state.summerBox.image}">` +
-    `<button class="mini-btn img-btn no-print" data-action="changeSummerImage" title="Changer l'image">🖼</button>` +
-    `<h4 class="editable" contenteditable="true" data-field="summerTitle">${state.summerBox.title}</h4></div>` +
-    `<div class="box-body editable" contenteditable="true" data-field="summerBody">${state.summerBox.body}</div>` +
-    `<span class="sign editable" contenteditable="true" data-field="summerSign">${state.summerBox.signature}</span>` +
+    `<h4 data-field="summerTitle">${state.summerBox.title}</h4></div>` +
+    `<div class="box-body" data-field="summerBody">${state.summerBox.body}</div>` +
+    `<span class="sign" data-field="summerSign">${state.summerBox.signature}</span>` +
     `</div>` +
     `</section>` +
     `<footer class="foot">` +

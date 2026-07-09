@@ -2,31 +2,44 @@ import type { Article, Newsletter } from '../state/state';
 import { articleHTML, renumber } from '../render/render';
 import { saveNewsletter, uploadImage } from '../api/api';
 import { compressImage } from './image';
+import { EditPanel, type Selection } from './panel';
 
-const RICH_FIELDS = new Set(['body', 'editoBody', 'infoBody', 'summerBody', 'highlight']);
 const SAVE_DELAY_MS = 700;
 
-type ImageTarget = 'article' | 'mast' | 'edito' | 'summer';
+export type ImageTarget = 'article' | 'mast' | 'edito' | 'summer';
 
 export class Editor {
   private root: HTMLElement;
   private saveIndicator: HTMLElement;
   private fileInput: HTMLInputElement;
-  private fmtToolbar: HTMLElement;
+  private panel: EditPanel;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingImageTarget: { kind: ImageTarget; articleEl: HTMLElement | null } | null = null;
-  private currentFmtTarget: HTMLElement | null = null;
 
   constructor(options: {
     root: HTMLElement;
     saveIndicator: HTMLElement;
     fileInput: HTMLInputElement;
-    fmtToolbar: HTMLElement;
+    panelAside: HTMLElement;
+    appContent: HTMLElement;
   }) {
     this.root = options.root;
     this.saveIndicator = options.saveIndicator;
     this.fileInput = options.fileInput;
-    this.fmtToolbar = options.fmtToolbar;
+    this.panel = new EditPanel({
+      aside: options.panelAside,
+      root: this.root,
+      appContent: options.appContent,
+      callbacks: {
+        onChange: () => this.save(),
+        onRequestImage: (kind, articleEl) => this.requestImage(kind, articleEl),
+        onRemoveArticleImage: (articleEl) => this.removeArticleImage(articleEl),
+        onMoveArticle: (articleEl, dir) => this.moveArticle(articleEl, dir),
+        onMoveArticleTo: (articleEl, index) => this.moveArticleTo(articleEl, index),
+        onToggleHighlight: (articleEl) => this.toggleHighlight(articleEl),
+        onDeleteArticle: (articleEl) => this.deleteArticle(articleEl),
+      },
+    });
     this.bindEvents();
   }
 
@@ -34,7 +47,8 @@ export class Editor {
     this.saveIndicator.textContent = text;
   }
 
-  private scheduleSave(): void {
+  /** Déclenche la sauvegarde debounced. Point d'entrée public (utilisé par le panneau). */
+  save(): void {
     this.setSaveIndicator('Sauvegarde…');
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(async () => {
@@ -47,6 +61,11 @@ export class Editor {
         console.error(err);
       }
     }, SAVE_DELAY_MS);
+  }
+
+  /** Ferme le panneau (appelé après un import/reset qui reconstruit la feuille). */
+  closePanel(): void {
+    this.panel.close();
   }
 
   private text(selector: string): string {
@@ -110,6 +129,8 @@ export class Editor {
     };
   }
 
+  // -------------------------------------------------- mutations sur articles
+
   private moveArticle(artEl: HTMLElement, dir: 'up' | 'down'): void {
     const parent = artEl.parentElement;
     if (!parent) return;
@@ -121,36 +142,50 @@ export class Editor {
       if (next?.classList.contains('art')) parent.insertBefore(next, artEl);
     }
     renumber(this.root);
-    this.scheduleSave();
+    this.panel.refresh();
+    this.save();
   }
 
-  private deleteArticle(artEl: HTMLElement): void {
-    if (!confirm('Supprimer cet article ?')) return;
+  private moveArticleTo(artEl: HTMLElement, index: number): void {
+    const parent = artEl.parentElement;
+    if (!parent) return;
+    const articles = Array.from(parent.querySelectorAll<HTMLElement>('.art'));
+    const clamped = Math.max(0, Math.min(index, articles.length - 1));
+    const target = articles[clamped];
+    if (!target || target === artEl) return;
+    const goingDown = articles.indexOf(artEl) < clamped;
+    parent.insertBefore(artEl, goingDown ? target.nextElementSibling : target);
+    renumber(this.root);
+    this.panel.refresh();
+    this.save();
+  }
+
+  private deleteArticle(artEl: HTMLElement): boolean {
+    if (!confirm('Supprimer cet article ?')) return false;
     artEl.remove();
     renumber(this.root);
-    this.scheduleSave();
+    this.save();
+    return true;
   }
 
-  private toggleHighlight(artEl: HTMLElement, btn: HTMLElement): void {
+  private toggleHighlight(artEl: HTMLElement): HTMLElement | null {
     const existing = artEl.querySelector('.art-highlight');
     if (existing) {
       existing.remove();
-      btn.textContent = '+ encart';
-    } else {
-      const hl = document.createElement('div');
-      hl.className = 'art-highlight editable';
-      hl.setAttribute('contenteditable', 'true');
-      hl.setAttribute('data-field', 'highlight');
-      hl.textContent = 'Texte mis en avant…';
-      artEl.appendChild(hl);
-      btn.textContent = '− encart';
-      hl.focus();
-      document.execCommand('selectAll', false);
+      this.save();
+      return null;
     }
-    this.scheduleSave();
+    const hl = document.createElement('div');
+    hl.className = 'art-highlight';
+    hl.setAttribute('data-field', 'highlight');
+    hl.textContent = 'Texte mis en avant…';
+    artEl.appendChild(hl);
+    this.save();
+    return hl;
   }
 
-  private addArticle(): void {
+  /** Ajoute un article en fin de liste et ouvre le panneau dessus. */
+  addArticle(): void {
     const id = `tmp-${Date.now()}`;
     const data: Article = {
       id,
@@ -161,21 +196,27 @@ export class Editor {
       highlight: null,
       updatedAt: new Date().toISOString(),
     };
+    const container = this.root.querySelector<HTMLElement>('#articlesContainer');
+    if (!container) return;
     const wrapper = document.createElement('div');
     wrapper.innerHTML = articleHTML(data);
     const node = wrapper.firstElementChild as HTMLElement;
-    const addBtn = this.root.querySelector('[data-action="addArticle"]');
-    addBtn?.parentElement?.insertBefore(node, addBtn);
+    container.appendChild(node);
     renumber(this.root);
-    this.scheduleSave();
-    const titleField = node.querySelector<HTMLElement>('[data-field="title"]');
-    titleField?.focus();
-    document.execCommand('selectAll', false);
+    this.save();
+    this.panel.open({ kind: 'article', el: node });
   }
+
+  // ------------------------------------------------------------- images
 
   private requestImage(kind: ImageTarget, articleEl: HTMLElement | null): void {
     this.pendingImageTarget = { kind, articleEl };
     this.fileInput.click();
+  }
+
+  private removeArticleImage(artEl: HTMLElement): void {
+    artEl.querySelector('.img-wrap')?.remove();
+    this.save();
   }
 
   private async handleImageFile(file: File): Promise<void> {
@@ -189,13 +230,12 @@ export class Editor {
       if (wrap) {
         wrap.querySelector('img')?.setAttribute('src', url);
       } else {
-        const placeholder = target.articleEl.querySelector('.no-img-placeholder');
         const newWrap = document.createElement('div');
         newWrap.className = 'img-wrap';
-        newWrap.innerHTML =
-          `<img class="art-img" src="${url}">` +
-          `<button class="mini-btn img-btn no-print" data-action="changeImage" title="Changer l'image">🖼 Changer</button>`;
-        placeholder?.replaceWith(newWrap);
+        newWrap.innerHTML = `<img class="art-img" src="${url}">`;
+        // L'image se place après le titre de l'article.
+        const head = target.articleEl.querySelector('.art-head');
+        head?.after(newWrap);
       }
     } else if (target.kind === 'mast') {
       this.root.querySelector('.mast-right img')?.setAttribute('src', url);
@@ -205,62 +245,29 @@ export class Editor {
       this.root.querySelector('.box-summer .sun-mini')?.setAttribute('src', url);
     }
 
-    this.scheduleSave();
+    this.pendingImageTarget = null;
+    this.save();
+    this.panel.refresh();
   }
 
-  private showFmtToolbar(target: HTMLElement): void {
-    const r = target.getBoundingClientRect();
-    this.fmtToolbar.style.display = 'flex';
-    this.fmtToolbar.style.top = `${window.scrollY + r.top - 38}px`;
-    this.fmtToolbar.style.left = `${window.scrollX + r.left}px`;
-    this.currentFmtTarget = target;
-  }
+  // --------------------------------------------------------------- events
 
-  private hideFmtToolbar(): void {
-    this.fmtToolbar.style.display = 'none';
+  /** Détermine le bloc sélectionné à partir d'un clic dans la feuille. */
+  private selectionFromTarget(target: HTMLElement): Selection | null {
+    const art = target.closest<HTMLElement>('.art');
+    if (art) return { kind: 'article', el: art };
+    if (target.closest('.mast')) return { kind: 'mast' };
+    if (target.closest('.edito')) return { kind: 'edito' };
+    if (target.closest('.box-info')) return { kind: 'info' };
+    if (target.closest('.box-summer')) return { kind: 'summer' };
+    return null;
   }
 
   private bindEvents(): void {
-    this.root.addEventListener('input', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.classList?.contains('editable')) this.scheduleSave();
-    });
-
+    // Clic sur un bloc de la feuille → ouvre le panneau d'édition.
     this.root.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
-      if (!btn) return;
-      const action = btn.getAttribute('data-action');
-      const artEl = btn.closest<HTMLElement>('.art');
-
-      switch (action) {
-        case 'moveUp':
-          if (artEl) this.moveArticle(artEl, 'up');
-          break;
-        case 'moveDown':
-          if (artEl) this.moveArticle(artEl, 'down');
-          break;
-        case 'deleteArticle':
-          if (artEl) this.deleteArticle(artEl);
-          break;
-        case 'toggleHighlight':
-          if (artEl) this.toggleHighlight(artEl, btn);
-          break;
-        case 'changeImage':
-          this.requestImage('article', artEl);
-          break;
-        case 'changeMastImage':
-          this.requestImage('mast', null);
-          break;
-        case 'changeEditoImage':
-          this.requestImage('edito', null);
-          break;
-        case 'changeSummerImage':
-          this.requestImage('summer', null);
-          break;
-        case 'addArticle':
-          this.addArticle();
-          break;
-      }
+      const sel = this.selectionFromTarget(e.target as HTMLElement);
+      if (sel) this.panel.open(sel);
     });
 
     this.fileInput.addEventListener('change', (e) => {
@@ -268,25 +275,5 @@ export class Editor {
       (e.target as HTMLInputElement).value = '';
       if (file) void this.handleImageFile(file);
     });
-
-    document.addEventListener('focusin', (e) => {
-      const field = (e.target as HTMLElement).getAttribute?.('data-field');
-      if (field && RICH_FIELDS.has(field)) this.showFmtToolbar(e.target as HTMLElement);
-    });
-    document.addEventListener('focusout', () => {
-      setTimeout(() => {
-        const active = document.activeElement as HTMLElement | null;
-        if (!active?.closest?.('.editable')) this.hideFmtToolbar();
-      }, 150);
-    });
-    this.fmtToolbar.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      const btn = (e.target as HTMLElement).closest('button');
-      if (!btn) return;
-      document.execCommand(btn.getAttribute('data-cmd') ?? '', false);
-      if (this.currentFmtTarget) this.scheduleSave();
-    });
-
-    window.addEventListener('beforeprint', () => this.hideFmtToolbar());
   }
 }

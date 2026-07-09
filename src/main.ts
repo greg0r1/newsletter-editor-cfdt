@@ -3,6 +3,7 @@ import './styles/print.css';
 import type { Newsletter } from './state/state';
 import { renderAll } from './render/render';
 import { Editor } from './edit/edit';
+import { bindPanelResize } from './edit/panel';
 import { getNewsletter, saveNewsletter, logout } from './api/api';
 import { exportJSON, importJSON } from './api/importExport';
 
@@ -10,11 +11,24 @@ const root = document.getElementById('newsletterRoot') as HTMLElement;
 const saveIndicator = document.getElementById('saveIndicator') as HTMLElement;
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const importInput = document.getElementById('importInput') as HTMLInputElement;
-const fmtToolbar = document.getElementById('fmtToolbar') as HTMLElement;
+const panelAside = document.getElementById('editPanel') as HTMLElement;
+const panelResizeHandle = document.getElementById('panelResizeHandle') as HTMLElement;
 const appContent = document.getElementById('appContent') as HTMLElement;
 const bootLoader = document.getElementById('bootLoader') as HTMLElement;
 
-const editor = new Editor({ root, saveIndicator, fileInput, fmtToolbar });
+const editor = new Editor({ root, saveIndicator, fileInput, panelAside, appContent });
+bindPanelResize(panelResizeHandle, panelAside);
+
+// Le panneau (sticky) doit se caler sous la toolbar (elle aussi sticky) : on
+// mesure sa hauteur réelle, qui varie selon la largeur de fenêtre (flex-wrap).
+const toolbarEl = document.querySelector<HTMLElement>('.toolbar');
+if (toolbarEl) {
+  const syncToolbarHeight = (): void => {
+    document.documentElement.style.setProperty('--toolbar-height', `${toolbarEl.offsetHeight}px`);
+  };
+  new ResizeObserver(syncToolbarHeight).observe(toolbarEl);
+  syncToolbarHeight();
+}
 
 async function boot(): Promise<void> {
   saveIndicator.textContent = 'Chargement…';
@@ -27,12 +41,15 @@ async function boot(): Promise<void> {
 }
 
 function loadInto(state: Newsletter): void {
+  // renderAll reconstruit la feuille : les références miroir du panneau
+  // deviennent orphelines, on le ferme donc avant de re-rendre.
+  editor.closePanel();
   root.dataset.newsletterId = state.id;
   renderAll(root, state);
 }
 
 document.getElementById('btnAdd')?.addEventListener('click', () => {
-  root.querySelector<HTMLElement>('[data-action="addArticle"]')?.click();
+  editor.addArticle();
 });
 
 document.getElementById('btnPrint')?.addEventListener('click', () => window.print());

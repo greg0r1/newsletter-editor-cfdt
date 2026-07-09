@@ -31,14 +31,15 @@
     width: 100%;
     box-shadow: none;
   }
-  .editable {
+  .selectable {
     outline: none !important;
     background: none !important;
+    cursor: auto !important;
   }
-  .art-toolbar,
-  .img-btn,
-  .add-art-btn,
-  .fmt-toolbar {
+  .edit-panel {
     display: none !important;
+  }
+  .app-body {
+    display: block;
   }
 }

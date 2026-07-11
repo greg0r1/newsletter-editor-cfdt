@@ -1,6 +1,12 @@
 :root {
   --orange: #e84e10;
-  --navy: #0b2c54;
+  --g0: #ffffff;
+  --g2: #f6f6f5;
+  --g4: #e6e5e3;
+  --g5: #d9d8d5;
+  --g7: #8a8880;
+  --g9: #26251f;
+  --accent-ring: rgba(232, 78, 16, 0.35);
 }
 * {
   box-sizing: border-box;
@@ -11,10 +17,8 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  background:
-    radial-gradient(1000px 600px at 80% -10%, #1a4a85, transparent),
-    radial-gradient(800px 500px at -10% 110%, #123a6b, transparent),
-    var(--navy);
+  /* Fond neutre sobre (esprit outil pro), pas de navy tape-à-l'œil. */
+  background: #f6f6f5;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -22,65 +26,63 @@ body {
   padding: 16px;
 }
 form {
-  background: #fff;
-  border-radius: 16px;
-  padding: 36px 30px 30px;
+  background: var(--g0);
+  border: 1px solid var(--g4);
+  border-radius: 12px;
+  padding: 32px 28px 28px;
   width: 100%;
   max-width: 340px;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.2),
-    0 24px 60px -12px rgba(0, 0, 0, 0.45);
+    0 1px 3px rgba(20, 20, 18, 0.06),
+    0 12px 32px -12px rgba(20, 20, 18, 0.14);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 13px;
 }
 .brand-mark {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 2px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 4px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: linear-gradient(135deg, #ff6a2b, var(--orange));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 4px 12px rgba(232, 78, 16, 0.4);
+  /* Aplat orange plein, sans dégradé. */
+  background: var(--orange);
 }
 .brand-mark svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--navy);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--g9);
   text-align: center;
-  letter-spacing: 0.2px;
+  letter-spacing: -0.1px;
 }
 .subtitle {
   font-size: 12.5px;
-  color: #7b8794;
+  color: var(--g7);
   text-align: center;
-  margin-top: -8px;
+  margin-top: -6px;
   margin-bottom: 6px;
 }
 input {
-  padding: 11px 12px;
-  border: 1px solid #cdd6e0;
-  border-radius: 9px;
+  padding: 10px 11px;
+  border: 1px solid var(--g5);
+  border-radius: 7px;
   font-size: 14px;
   font-family: inherit;
   width: 100%;
-  transition:
-    border-color 0.12s,
-    box-shadow 0.12s;
+  background: var(--g0);
+  transition: border-color 0.1s, box-shadow 0.1s;
 }
 input:focus {
   outline: none;
   border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(232, 78, 16, 0.14);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 .password-field {
   position: relative;
@@ -95,45 +97,44 @@ input:focus {
   transform: translateY(-50%);
   background: none;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #7b8794;
+  color: var(--g7);
 }
 .toggle-password svg {
   width: 17px;
   height: 17px;
 }
 .toggle-password:hover {
-  background: #eef2f7;
-  color: var(--navy);
+  background: var(--g2);
+  color: var(--g9);
 }
 button[type="submit"] {
+  /* Aplat orange plein, sans dégradé ni ombre lourde. */
   background: var(--orange);
   color: #fff;
   border: none;
-  border-radius: 9px;
+  border-radius: 7px;
   padding: 11px 12px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
   font-family: inherit;
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: background 0.15s, transform 0.05s;
+  transition: background 0.12s;
 }
 button[type="submit"]:hover {
-  background: #f75a1c;
+  background: #d5450d;
 }
-button[type="submit"]:active {
-  transform: translateY(1px);
+button[type="submit"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 .error {
-  color: #c0392b;
+  color: #b3271b;
   font-size: 12.5px;
   text-align: center;
   min-height: 16px;

@@ -1,5 +1,5 @@
 :root {
-  /* — Feuille (identité CFDT, design imprimé validé) — */
+  /* — Feuille (identité CFDT, design imprimé validé — NE PAS CHANGER) — */
   --orange: #e84e10;
   --navy: #0b2c54;
   --cream: #fdf3e9;
@@ -8,18 +8,50 @@
   --ink: #2f3640;
   --muted: #4a5666;
   --line: #e7ded3;
-  /* — Chrome de l'application (éditeur) — */
+
+  /* ======================================================================
+     CHROME DE L'ÉDITEUR — thème "outil pro" (esprit Linear / Notion).
+     Presque monochrome : échelle de gris neutres, UNE touche d'orange pour
+     l'action principale et le focus. Bordures fines 1px, pas d'ombres
+     tape-à-l'œil, pas de dégradés, hover très discret. Sobre et dense.
+     ====================================================================== */
   --ui-font:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --sheet-font:
     "Trebuchet MS", "Segoe UI", Verdana, Helvetica, Arial, sans-serif;
-  --app-bg: #eef1f5;
-  --surface: #ffffff;
-  --border: #e3e8ef;
-  --border-strong: #cdd6e0;
-  --ui-muted: #7b8794;
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+
+  /* Accent unique (action principale, sélection, focus). */
+  --accent: #e84e10;
+  --accent-hover: #d5450d;
+  --accent-soft: rgba(232, 78, 16, 0.1);   /* fond focus/sélection discret */
+  --accent-ring: rgba(232, 78, 16, 0.35);  /* anneau de focus */
+
+  /* Échelle de gris neutres (0 = plus clair, 9 = plus sombre). */
+  --g0: #ffffff;
+  --g1: #fbfbfa;   /* fond app (blanc cassé très légèrement chaud) */
+  --g2: #f6f6f5;   /* surface enfoncée / hover */
+  --g3: #efeeed;
+  --g4: #e6e5e3;   /* bordures fines */
+  --g5: #d9d8d5;   /* bordure plus marquée */
+  --g6: #b8b6b1;
+  --g7: #8a8880;   /* texte tertiaire */
+  --g8: #56544e;   /* texte secondaire */
+  --g9: #26251f;   /* texte principal (presque noir, chaud) */
+
+  /* Rôles dérivés (pour lisibilité du reste de la feuille de style). */
+  --app-bg: var(--g1);
+  --surface: var(--g0);
+  --border: var(--g4);
+  --border-strong: var(--g5);
+  --text: var(--g9);
+  --text-med: var(--g8);
+  --ui-muted: var(--g7);
+
+  /* Une seule ombre, ultra discrète, réservée aux overlays (menus/modale). */
+  --shadow-sm: 0 1px 2px rgba(20, 20, 18, 0.05);
+  --shadow-pop: 0 4px 12px -2px rgba(20, 20, 18, 0.1),
+                0 12px 28px -8px rgba(20, 20, 18, 0.14);
 }
 * {
   box-sizing: border-box;
@@ -32,73 +64,68 @@ html {
 }
 body {
   font-family: var(--ui-font);
-  color: var(--ink);
+  color: var(--text);
   background: var(--app-bg);
   line-height: 1.34;
 }
 
-/* ---------- TOOLBAR ---------- */
+/* ---------- TOOLBAR (barre d'outils claire, esprit Linear) ----------
+   Chrome clair, hairline en bas, aucune ombre lourde. Rien de navy : le
+   caractère vient de la sobriété et de la typo, pas d'une couleur pleine. */
 .toolbar {
   position: sticky;
   top: 0;
   z-index: 50;
-  background:
-    radial-gradient(120% 180% at 0% 0%, #12406e 0%, transparent 55%),
-    linear-gradient(180deg, #0d3661 0%, #08213f 100%);
-  color: #fff;
+  background: var(--g0);
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 11px 20px;
+  gap: 12px;
+  padding: 9px 16px;
   flex-wrap: wrap;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 2px 4px rgba(5, 17, 34, 0.35),
-    0 10px 30px -8px rgba(5, 17, 34, 0.3);
+  border-bottom: 1px solid var(--border);
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-right: auto;
   min-width: 0;
 }
 .brand-logo {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 12px -2px rgba(0, 0, 0, 0.25);
+  background: var(--g0);
+  border: 1px solid var(--border);
 }
 .brand-logo img {
-  width: 34px;
-  height: 34px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   display: block;
 }
 .brand-txt {
   display: flex;
   flex-direction: column;
-  line-height: 1.25;
+  line-height: 1.2;
   min-width: 0;
 }
 .toolbar h1 {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.1px;
+  color: var(--text);
   white-space: nowrap;
 }
 .brand-sub {
   font-size: 11px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  font-weight: 450;
+  color: var(--ui-muted);
   white-space: nowrap;
 }
 .toolbar-actions {
@@ -109,74 +136,80 @@ body {
 }
 .tsep {
   width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.12);
-  margin: 0 4px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 3px;
 }
+
+/* ---------- BOUTONS (sobres, esprit Linear) ----------
+   Défaut : fond blanc, hairline 1px, texte gris foncé. Hover = fond gris très
+   léger (aucune ombre, aucun soulèvement, aucun scale). Primary = aplat orange
+   plein, sans dégradé. */
 .tbtn {
   appearance: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9px;
-  padding: 8px 13px;
+  background: var(--g0);
+  color: var(--text-med);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 11px;
   font-family: inherit;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 550;
   line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    box-shadow 0.15s,
-    transform 0.05s;
+  gap: 6px;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
 .tbtn svg {
   flex: 0 0 auto;
   width: 15px;
   height: 15px;
-  opacity: 0.85;
+  color: var(--ui-muted);
 }
 .tbtn:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--g2);
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 .tbtn:hover svg {
-  opacity: 1;
-}
-.tbtn:active {
-  transform: translateY(1px);
+  color: var(--text-med);
 }
 .tbtn:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.8);
-  outline-offset: 2px;
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 .tbtn:disabled {
   opacity: 0.45;
   cursor: default;
 }
+/* Action principale : aplat orange, texte blanc. Hover = simple assombrissement. */
 .tbtn.primary {
-  background: linear-gradient(180deg, #f4581a, var(--orange));
+  background: var(--accent);
   color: #fff;
-  border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 12px -3px rgba(232, 78, 16, 0.6);
+  border-color: var(--accent);
 }
 .tbtn.primary svg {
-  opacity: 1;
+  color: currentColor;
 }
 .tbtn.primary:hover {
-  background: linear-gradient(180deg, #ff6326, #f0501a);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #fff;
+}
+.tbtn.danger {
+  color: #b3271b;
+}
+.tbtn.danger svg {
+  color: currentColor;
 }
 .tbtn.danger:hover {
-  background: rgba(210, 60, 45, 0.85);
-  border-color: transparent;
+  background: #fbeceb;
+  border-color: #eabfba;
+  color: #a11f14;
 }
 
 /* ---------- MENUS DÉROULANTS DE LA TOOLBAR ---------- */
@@ -192,20 +225,18 @@ body {
 }
 .tmenu-pop {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   right: 0;
   z-index: 60;
   min-width: 210px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 6px;
+  gap: 1px;
+  padding: 5px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow:
-    0 4px 12px -4px rgba(11, 44, 84, 0.24),
-    0 12px 32px -8px rgba(11, 44, 84, 0.28);
+  border-radius: 9px;
+  box-shadow: var(--shadow-pop);
 }
 .tmenu-pop[hidden] {
   display: none;
@@ -214,55 +245,55 @@ body {
   appearance: none;
   width: 100%;
   background: transparent;
-  color: var(--ink);
+  color: var(--text);
   border: 0;
-  border-radius: 8px;
-  padding: 9px 12px;
+  border-radius: 6px;
+  padding: 8px 10px;
   font-family: inherit;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 450;
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: background 0.13s, color 0.13s;
+  transition: background 0.1s, color 0.1s;
 }
 .tmenu-item svg {
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
-  opacity: 0.7;
+  color: var(--ui-muted);
 }
 .tmenu-item:hover {
-  background: var(--lav);
+  background: var(--g2);
 }
 .tmenu-item:focus-visible {
-  outline: 2px solid var(--orange);
-  outline-offset: -2px;
+  outline: none;
+  background: var(--g2);
+  box-shadow: inset 0 0 0 1px var(--accent-ring);
 }
 .tmenu-item.danger {
-  color: #c0392b;
+  color: #b3271b;
 }
 .tmenu-item.danger svg {
-  opacity: 0.85;
+  color: currentColor;
 }
 .tmenu-item.danger:hover {
-  background: #fdecea;
+  background: #fbeceb;
 }
 
 .save-indicator {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   font-size: 11.5px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  padding: 5px 12px 5px 10px;
+  font-weight: 450;
+  color: var(--ui-muted);
+  background: transparent;
+  border: none;
+  padding: 4px 8px 4px 4px;
   white-space: nowrap;
 }
 .save-indicator:empty {
@@ -271,24 +302,23 @@ body {
 .save-indicator::before {
   content: "";
   flex: 0 0 auto;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #8fa3bb;
+  background: var(--g6);
 }
 .save-indicator[data-state="saving"]::before {
-  background: #fbbf24;
+  background: #d9a020;
   animation: save-pulse 1s ease-in-out infinite;
 }
 .save-indicator[data-state="saved"]::before {
-  background: #34d399;
+  background: #3fae5a;
 }
 .save-indicator[data-state="error"] {
-  color: #fecaca;
-  border-color: rgba(248, 113, 113, 0.4);
+  color: #b3271b;
 }
 .save-indicator[data-state="error"]::before {
-  background: #f87171;
+  background: #d9463a;
 }
 @keyframes save-pulse {
   50% {
@@ -302,16 +332,13 @@ body {
    bas) : ils ne participent plus au flux de .app-body. .wrap-outer est donc
    le seul enfant en flux normal, pas besoin de flex ici. */
 .wrap-outer {
-  padding: 36px 20px 80px;
+  padding: 32px 20px 80px;
 }
-/* Trame de points façon plan de travail — écran uniquement (jamais imprimée). */
+/* Plan de travail : canvas neutre légèrement plus foncé que les surfaces, pour
+   détacher la feuille. Écran uniquement (jamais imprimé). */
 @media screen {
-  .wrap-outer {
-    background-image: radial-gradient(
-      rgba(11, 44, 84, 0.07) 1px,
-      transparent 1.5px
-    );
-    background-size: 24px 24px;
+  .app-body {
+    background: var(--g2);
   }
 }
 
@@ -322,31 +349,26 @@ body {
   margin: 0 auto;
   background: #fff;
   font-family: var(--sheet-font);
-  box-shadow:
-    0 0 0 1px rgba(11, 44, 84, 0.06),
-    0 2px 6px rgba(11, 44, 84, 0.08),
-    0 28px 60px -20px rgba(11, 44, 84, 0.35);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(20, 20, 18, 0.06),
+              0 12px 32px -12px rgba(20, 20, 18, 0.16);
   position: relative;
 }
 
 /* ---------- AFFORDANCE DE SÉLECTION (clic → panneau) ---------- */
 .selectable {
   cursor: pointer;
-  outline: 2px solid transparent;
-  outline-offset: 3px;
-  border-radius: 6px;
-  transition:
-    outline-color 0.12s,
-    background 0.12s,
-    box-shadow 0.12s;
+  outline: 1.5px solid transparent;
+  outline-offset: 2px;
+  border-radius: 4px;
+  transition: outline-color 0.1s, background 0.1s;
 }
 .selectable:hover {
-  outline-color: rgba(11, 44, 84, 0.28);
+  outline-color: var(--g5);
 }
 .selectable.selected {
-  outline-color: var(--orange);
-  background: rgba(232, 78, 16, 0.03);
-  box-shadow: 0 0 0 6px rgba(232, 78, 16, 0.07);
+  outline-color: var(--accent);
+  background: var(--accent-soft);
 }
 .img-wrap {
   position: relative;
@@ -684,9 +706,9 @@ body {
   max-width: 70vw;
   display: flex;
   flex-direction: column;
-  background: #fbfcfe;
+  background: var(--g0);
   border-left: 1px solid var(--border);
-  box-shadow: -16px 0 40px rgba(11, 44, 84, 0.16);
+  box-shadow: -8px 0 24px -12px rgba(20, 20, 18, 0.18);
   z-index: 140;
   transform: translateX(100%);
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
@@ -710,7 +732,7 @@ body.panel-resizing .edit-panel {
 .pf-scrim {
   position: fixed;
   inset: var(--toolbar-height, 0px) 0 0 0;
-  background: rgba(11, 30, 54, 0.22);
+  background: rgba(20, 20, 18, 0.16);
   z-index: 130;
   opacity: 0;
   pointer-events: none;
@@ -743,7 +765,7 @@ body.panel-resizing .edit-panel {
 .email-modal-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(11, 30, 54, 0.42);
+  background: rgba(20, 20, 18, 0.34);
   animation: email-modal-fade 0.18s ease;
 }
 .email-modal-card {
@@ -754,8 +776,9 @@ body.panel-resizing .edit-panel {
   max-width: 100%;
   max-height: 100%;
   background: var(--surface);
-  border-radius: 16px;
-  box-shadow: 0 24px 64px -12px rgba(11, 30, 54, 0.45);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
   overflow: hidden;
   animation: email-modal-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -764,22 +787,23 @@ body.panel-resizing .edit-panel {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
 }
 .email-modal-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
   margin-right: auto;
 }
 /* Bascule Desktop / Mobile (segmented control). */
 .email-modal-modes {
   display: inline-flex;
   gap: 2px;
-  padding: 3px;
-  background: var(--lav);
-  border-radius: 10px;
+  padding: 2px;
+  background: var(--g2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
 }
 .email-modal-mode {
   appearance: none;
@@ -788,25 +812,25 @@ body.panel-resizing .edit-panel {
   color: var(--ui-muted);
   font-family: inherit;
   font-size: 12.5px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 8px;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: 5px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.13s, color 0.13s, box-shadow 0.13s;
+  transition: background 0.1s, color 0.1s;
 }
 .email-modal-mode svg {
   width: 15px;
   height: 15px;
 }
 .email-modal-mode:hover {
-  color: var(--ink);
+  color: var(--text);
 }
 .email-modal-mode.active {
-  background: var(--surface);
-  color: var(--navy);
+  background: var(--g0);
+  color: var(--text);
   box-shadow: var(--shadow-sm);
 }
 .email-modal-close {
@@ -815,19 +839,19 @@ body.panel-resizing .edit-panel {
   border: 0;
   color: var(--ui-muted);
   padding: 6px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
-  transition: background 0.13s, color 0.13s;
+  transition: background 0.1s, color 0.1s;
 }
 .email-modal-close:hover {
-  background: var(--lav);
-  color: var(--ink);
+  background: var(--g2);
+  color: var(--text);
 }
 .email-modal-body {
   flex: 1 1 auto;
   min-height: 0;
-  background: #dae5e4;
+  background: var(--g3);
   padding: 12px;
   overflow: auto;
   text-align: center;
@@ -838,7 +862,7 @@ body.panel-resizing .edit-panel {
   height: 70vh;
   min-height: 400px;
   border: 0;
-  background: #dae5e4;
+  background: var(--g3);
   transition: width 0.2s ease;
 }
 .email-modal-foot {
@@ -846,25 +870,8 @@ body.panel-resizing .edit-panel {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-top: 1px solid var(--border);
-}
-/* Les boutons du pied réutilisent .tbtn mais sur fond clair (comme .edit-panel .tbtn). */
-.email-modal-foot .tbtn {
-  background: var(--surface);
-  color: var(--ink);
-  border-color: var(--border-strong);
-}
-.email-modal-foot .tbtn:hover {
-  background: var(--lav);
-}
-.email-modal-foot .tbtn.primary {
-  background: linear-gradient(180deg, #f4581a, var(--orange));
-  color: #fff;
-  border-color: transparent;
-}
-.email-modal-foot .tbtn.primary:hover {
-  background: linear-gradient(180deg, #ff6326, #f0501a);
 }
 @keyframes email-modal-fade {
   from {
@@ -908,7 +915,7 @@ body.panel-resizing .edit-panel {
 }
 .pf-resize-handle:hover::after,
 body.panel-resizing .pf-resize-handle::after {
-  background: var(--orange);
+  background: var(--accent);
 }
 #appContent.panel-open .pf-resize-handle {
   display: block;
@@ -921,25 +928,18 @@ body.panel-resizing {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 13px 16px;
-  background: var(--surface);
-  color: var(--navy);
+  padding: 10px 12px 10px 16px;
+  background: var(--g0);
+  color: var(--text);
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
 }
-.pf-header::before {
-  content: "";
-  flex: 0 0 auto;
-  width: 4px;
-  height: 18px;
-  border-radius: 2px;
-  background: var(--orange);
-}
 .pf-title {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
+  color: var(--text-med);
   margin-right: auto;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -947,8 +947,8 @@ body.panel-resizing {
 }
 .pf-dirty {
   font-size: 10.5px;
-  font-weight: 600;
-  color: #c0392b;
+  font-weight: 550;
+  color: #b3271b;
   white-space: nowrap;
 }
 .pf-save {
@@ -960,7 +960,7 @@ body.panel-resizing {
   background: transparent;
   color: var(--ui-muted);
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   width: 28px;
   height: 28px;
   display: flex;
@@ -968,58 +968,57 @@ body.panel-resizing {
   justify-content: center;
   cursor: pointer;
   flex: 0 0 auto;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.1s, color 0.1s;
 }
 .pf-close svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 .pf-close:hover {
-  background: #eef2f7;
-  color: var(--navy);
+  background: var(--g2);
+  color: var(--text);
 }
 .pf-body {
-  padding: 18px 16px;
+  padding: 14px 16px 24px;
   overflow-y: auto;
   flex: 1 1 auto;
   scrollbar-width: thin;
-  scrollbar-color: #c3cdd9 transparent;
+  scrollbar-color: var(--g5) transparent;
 }
 .pf-body::-webkit-scrollbar {
   width: 10px;
 }
 .pf-body::-webkit-scrollbar-thumb {
-  background: #c3cdd9;
+  background: var(--g5);
   border-radius: 8px;
-  border: 3px solid #fbfcfe;
+  border: 3px solid var(--g0);
 }
 .pf-sections-toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
 }
 .pf-toggle-all {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 5px;
+  padding: 4px 8px;
   background: transparent;
-  border: 1px solid var(--border-strong);
-  border-radius: 7px;
-  color: var(--muted);
+  border: none;
+  border-radius: 6px;
+  color: var(--ui-muted);
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background 0.1s, color 0.1s;
 }
 .pf-toggle-all:hover {
-  background: #f4f7fb;
-  color: var(--navy);
-  border-color: #b6c2d0;
+  background: var(--g2);
+  color: var(--text);
 }
 .pf-toggle-all:focus-visible {
-  outline: 2px solid var(--orange);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-ring);
 }
 .pf-toggle-all-icon {
   display: none;
@@ -1039,76 +1038,82 @@ body.panel-resizing {
 .pf-toggle-all.pf-all-collapsed .pf-toggle-all-icon-expand {
   display: flex;
 }
+/* ---------- SECTIONS (accordéon plat, esprit Linear) ----------
+   Pas de cartes flottantes : chaque section est une rangée séparée par un
+   simple hairline. Icône monochrome (glyphe gris), aucune ombre, hover à
+   peine perceptible. Dense et rangé. */
 .pf-section {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 10px;
-  overflow: hidden;
+  border-bottom: 1px solid var(--border);
 }
-.pf-section:last-child {
-  margin-bottom: 0;
+/* `:first-of-type` et non `:first-child` : le 1ᵉʳ enfant de .pf-body est
+   .pf-sections-toolbar (un <div>), les sections sont des <section>. */
+.pf-section:first-of-type {
+  border-top: 1px solid var(--border);
 }
 .pf-section-head {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 14px;
+  padding: 11px 4px;
   background: transparent;
   border: none;
   cursor: pointer;
   text-align: left;
   font: inherit;
-  color: var(--navy);
-  transition: background 0.12s;
+  color: var(--text);
+  transition: color 0.1s;
 }
 .pf-section-head:hover {
-  background: #f6f9fc;
+  color: var(--text);
+}
+.pf-section-head:hover .pf-section-title {
+  color: var(--text);
+}
+.pf-section-head:hover .pf-section-chevron {
+  color: var(--text-med);
 }
 .pf-section-head:focus-visible {
-  outline: 2px solid var(--orange);
-  outline-offset: -2px;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent-ring);
+  border-radius: 6px;
 }
 .pf-section-icon {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: var(--peach);
-  color: var(--orange);
+  width: 18px;
+  height: 18px;
+  color: var(--ui-muted);
 }
 .pf-section-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 .pf-section-title {
   flex: 1 1 auto;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: var(--navy);
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: -0.1px;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.1s;
 }
 .pf-section-chevron {
   flex: 0 0 auto;
   display: flex;
-  color: var(--ui-muted);
-  transition: transform 0.16s ease;
+  color: var(--g6);
+  transition: transform 0.16s ease, color 0.1s;
 }
 .pf-section-chevron svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 .pf-section-body {
-  padding: 4px 14px 14px;
-  border-top: 1px solid #edf1f6;
+  padding: 2px 0 16px 28px;
 }
 .pf-section.pf-collapsed .pf-section-body {
   display: none;
@@ -1116,32 +1121,25 @@ body.panel-resizing {
 .pf-section.pf-collapsed .pf-section-chevron {
   transform: rotate(-90deg);
 }
-.pf-section.pf-collapsed .pf-section-head {
-  padding-bottom: 11px;
-}
 .pf-label {
   display: block;
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.1px;
   color: var(--ui-muted);
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 .pf-field {
   border: 1px solid var(--border-strong);
-  border-radius: 9px;
-  padding: 10px 12px;
-  font-size: 14px;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13.5px;
   line-height: 1.55;
-  color: var(--ink);
-  background: #fff;
+  color: var(--text);
+  background: var(--g0);
   min-height: 20px;
   outline: none;
-  box-shadow: var(--shadow-sm);
-  transition:
-    border-color 0.12s,
-    box-shadow 0.12s;
+  transition: border-color 0.1s, box-shadow 0.1s;
 }
 .pf-field.pf-single {
   white-space: nowrap;
@@ -1154,13 +1152,11 @@ body.panel-resizing {
   resize: vertical;
 }
 .pf-field:hover {
-  border-color: #b6c2d0;
+  border-color: var(--g6);
 }
 .pf-field:focus {
-  border-color: var(--orange);
-  box-shadow:
-    var(--shadow-sm),
-    0 0 0 3px rgba(232, 78, 16, 0.14);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 .pf-field.pf-rich p {
   margin-bottom: 6px;
@@ -1170,7 +1166,7 @@ body.panel-resizing {
   margin: 4px 0 6px 18px;
 }
 .pf-field.pf-rich a {
-  color: var(--orange);
+  color: var(--accent);
   text-decoration: underline;
 }
 .pf-fmt-bar {
@@ -1179,16 +1175,16 @@ body.panel-resizing {
   flex-wrap: wrap;
   align-items: center;
   gap: 1px;
-  background: #eef2f7;
-  border: 1px solid #e1e7ef;
-  border-radius: 9px;
-  padding: 4px;
+  background: var(--g2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px;
   margin-bottom: 8px;
 }
 .pf-fmt-sep {
   width: 1px;
   align-self: stretch;
-  background: #d3dbe4;
+  background: var(--g4);
   margin: 3px 4px;
 }
 .pf-highlight-field {
@@ -1198,27 +1194,25 @@ body.panel-resizing {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 28px;
+  width: 28px;
+  height: 26px;
   background: transparent;
   border: none;
-  border-radius: 6px;
-  color: #48566b;
+  border-radius: 5px;
+  color: var(--text-med);
   cursor: pointer;
-  transition: background 0.12s, box-shadow 0.12s, color 0.12s;
+  transition: background 0.1s, color 0.1s;
 }
 .pf-fmt-btn svg {
   width: 16px;
   height: 16px;
 }
 .pf-fmt-btn:hover {
-  background: #fff;
-  color: var(--navy);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.16);
+  background: var(--g0);
+  color: var(--text);
 }
 .pf-fmt-btn:active {
-  background: #e7edf4;
-  box-shadow: none;
+  background: var(--g3);
 }
 /* Palette de couleur (popover ancré sous la barre). */
 .pf-color-pop {
@@ -1230,10 +1224,10 @@ body.panel-resizing {
   grid-template-columns: repeat(6, 1fr);
   gap: 6px;
   padding: 8px;
-  background: #fff;
+  background: var(--g0);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(11, 44, 84, 0.16);
+  border-radius: 8px;
+  box-shadow: var(--shadow-pop);
 }
 .pf-color-pop[hidden] {
   display: none;
@@ -1245,11 +1239,10 @@ body.panel-resizing {
   border: 1px solid rgba(0, 0, 0, 0.12);
   cursor: pointer;
   padding: 0;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition: transform 0.1s;
 }
 .pf-swatch:hover {
-  transform: scale(1.12);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transform: scale(1.1);
 }
 .pf-row {
   display: flex;
@@ -1263,7 +1256,7 @@ body.panel-resizing {
 }
 .pf-inline {
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--text-med);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1271,70 +1264,36 @@ body.panel-resizing {
 .pf-select {
   appearance: none;
   border: 1px solid var(--border-strong);
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 5px 24px 5px 9px;
   font-size: 12.5px;
   font-family: inherit;
-  font-weight: 600;
-  color: var(--ink);
+  font-weight: 500;
+  color: var(--text);
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237b8794' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-    right 7px center / 12px no-repeat #fff;
-  box-shadow: var(--shadow-sm);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8880' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    right 7px center / 12px no-repeat var(--g0);
   cursor: pointer;
 }
 .pf-select:focus {
   outline: none;
-  border-color: var(--orange);
-  box-shadow:
-    var(--shadow-sm),
-    0 0 0 3px rgba(232, 78, 16, 0.14);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
-/* Boutons du panneau : réutilisent .tbtn mais sur fond clair. */
-.edit-panel .tbtn {
-  background: #fff;
-  color: #33415b;
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
-}
+/* Boutons du panneau : réutilisent .tbtn (fond clair par défaut, déjà sobre). */
 .edit-panel .tbtn svg {
   width: 14px;
   height: 14px;
-}
-.edit-panel .tbtn:hover {
-  background: #f4f7fb;
-  border-color: #b6c2d0;
-}
-.edit-panel .tbtn:focus-visible {
-  outline: 2px solid var(--orange);
-  outline-offset: 2px;
-}
-.edit-panel .tbtn.primary {
-  background: var(--orange);
-  border-color: transparent;
-  color: #fff;
-}
-.edit-panel .tbtn.primary:hover {
-  background: #f75a1c;
-}
-.edit-panel .tbtn.danger {
-  background: #fff;
-  border-color: #f0cfc9;
-  color: #c0392b;
-}
-.edit-panel .tbtn.danger:hover {
-  background: #fdf1ef;
-  border-color: #e5a89f;
 }
 .edit-panel .tbtn.pf-block {
   width: 100%;
   justify-content: center;
 }
 .pf-image {
-  border: 1.5px dashed var(--border-strong);
-  border-radius: 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
   padding: 10px;
-  background: #f6f9fc;
+  background: var(--g1);
   margin-bottom: 8px;
   min-height: 64px;
   display: flex;
@@ -1349,9 +1308,9 @@ body.panel-resizing {
 .pf-image-preview {
   max-width: 100%;
   max-height: 140px;
-  border-radius: 6px;
+  border-radius: 5px;
   display: block;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 .pf-image.pf-image-empty .pf-image-preview {
   display: none;

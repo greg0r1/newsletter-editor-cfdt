@@ -1,7 +1,13 @@
 import { buildLogoutCookieHeader, buildSessionCookieHeader, createSessionCookieValue } from './_lib/auth.js';
+import { serverErrorResponse } from './_lib/errors.js';
+import { clearAttempts, isRateLimited, recordFailedAttempt } from './_lib/rateLimit.js';
 
 export async function POST(request: Request): Promise<Response> {
   try {
+    if (await isRateLimited(request)) {
+      return Response.json({ error: 'Trop de tentatives. Réessayez dans quelques minutes.' }, { status: 429 });
+    }
+
     const body = (await request.json()) as { password?: string };
     const expected = process.env.AUTH_PASSWORD;
 
@@ -10,9 +16,11 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     if (body.password !== expected) {
+      await recordFailedAttempt(request);
       return Response.json({ error: 'Mot de passe incorrect' }, { status: 401 });
     }
 
+    await clearAttempts(request);
     const cookieValue = createSessionCookieValue();
     return new Response(null, {
       status: 200,
@@ -20,7 +28,7 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }
 

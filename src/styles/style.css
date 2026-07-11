@@ -178,6 +178,80 @@ body {
   background: rgba(210, 60, 45, 0.85);
   border-color: transparent;
 }
+
+/* ---------- MENUS DÉROULANTS DE LA TOOLBAR ---------- */
+.tmenu {
+  position: relative;
+  display: inline-flex;
+}
+.tmenu-chevron {
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
+  margin-left: -2px;
+}
+.tmenu-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 12px -4px rgba(11, 44, 84, 0.24),
+    0 12px 32px -8px rgba(11, 44, 84, 0.28);
+}
+.tmenu-pop[hidden] {
+  display: none;
+}
+.tmenu-item {
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.13s, color 0.13s;
+}
+.tmenu-item svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+.tmenu-item:hover {
+  background: var(--lav);
+}
+.tmenu-item:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: -2px;
+}
+.tmenu-item.danger {
+  color: #c0392b;
+}
+.tmenu-item.danger svg {
+  opacity: 0.85;
+}
+.tmenu-item.danger:hover {
+  background: #fdecea;
+}
+
 .save-indicator {
   display: inline-flex;
   align-items: center;
@@ -652,6 +726,164 @@ body.panel-resizing .edit-panel {
     transition: none !important;
   }
 }
+
+/* ---------- MODALE D'APERÇU EMAIL ---------- */
+.email-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.email-modal[hidden] {
+  display: none;
+}
+.email-modal-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 30, 54, 0.42);
+  animation: email-modal-fade 0.18s ease;
+}
+.email-modal-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 940px;
+  max-width: 100%;
+  max-height: 100%;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px -12px rgba(11, 30, 54, 0.45);
+  overflow: hidden;
+  animation: email-modal-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.email-modal-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.email-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-right: auto;
+}
+/* Bascule Desktop / Mobile (segmented control). */
+.email-modal-modes {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--lav);
+  border-radius: 10px;
+}
+.email-modal-mode {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ui-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.13s, color 0.13s, box-shadow 0.13s;
+}
+.email-modal-mode svg {
+  width: 15px;
+  height: 15px;
+}
+.email-modal-mode:hover {
+  color: var(--ink);
+}
+.email-modal-mode.active {
+  background: var(--surface);
+  color: var(--navy);
+  box-shadow: var(--shadow-sm);
+}
+.email-modal-close {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--ui-muted);
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  transition: background 0.13s, color 0.13s;
+}
+.email-modal-close:hover {
+  background: var(--lav);
+  color: var(--ink);
+}
+.email-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #dae5e4;
+  padding: 12px;
+  overflow: auto;
+  text-align: center;
+}
+.email-modal-frame {
+  display: inline-block;
+  width: 100%;
+  height: 70vh;
+  min-height: 400px;
+  border: 0;
+  background: #dae5e4;
+  transition: width 0.2s ease;
+}
+.email-modal-foot {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+/* Les boutons du pied réutilisent .tbtn mais sur fond clair (comme .edit-panel .tbtn). */
+.email-modal-foot .tbtn {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border-strong);
+}
+.email-modal-foot .tbtn:hover {
+  background: var(--lav);
+}
+.email-modal-foot .tbtn.primary {
+  background: linear-gradient(180deg, #f4581a, var(--orange));
+  color: #fff;
+  border-color: transparent;
+}
+.email-modal-foot .tbtn.primary:hover {
+  background: linear-gradient(180deg, #ff6326, #f0501a);
+}
+@keyframes email-modal-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes email-modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .email-modal-scrim,
+  .email-modal-card {
+    animation: none;
+  }
+}
+
 .pf-resize-handle {
   display: none;
   position: fixed;

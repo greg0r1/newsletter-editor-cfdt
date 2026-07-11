@@ -7,3 +7,6 @@ dist
 .DS_Store
 *.tsbuildinfo
 .env*
+.agents
+.claude
+skills-lock.json

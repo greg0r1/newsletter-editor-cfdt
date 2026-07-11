@@ -1,5 +1,7 @@
 import { supabase } from './_lib/supabase.js';
 import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth.js';
+import { sanitizeHtml } from './_lib/sanitize.js';
+import { serverErrorResponse } from './_lib/errors.js';
 import { articleRowToDTO, type ArticleRow, type ArticleVersionRow } from './_lib/types.js';
 
 function requireAuth(request: Request): boolean {
@@ -34,7 +36,7 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json(versions);
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }
 
@@ -55,14 +57,16 @@ export async function POST(request: Request): Promise<Response> {
       throw new Error(`Version introuvable: ${versionError?.message ?? ''}`);
     }
 
+    // Sanitize à nouveau au cas où le snapshot proviendrait d'une version
+    // écrite avant l'introduction du sanitizer serveur (défense en profondeur).
     const snapshot = versionRow.snapshot;
     const { data: restoredRow, error: restoreError } = await supabase
       .from('articles')
       .update({
-        title: snapshot.title,
+        title: sanitizeHtml(snapshot.title),
         image_url: snapshot.imageUrl,
-        body: snapshot.body,
-        highlight: snapshot.highlight,
+        body: sanitizeHtml(snapshot.body),
+        highlight: snapshot.highlight != null ? sanitizeHtml(snapshot.highlight) : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', body.articleId)
@@ -86,6 +90,6 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(dto);
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }

@@ -1,5 +1,7 @@
 import { supabase } from './_lib/supabase.js';
 import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth.js';
+import { sanitizeHtml } from './_lib/sanitize.js';
+import { serverErrorResponse } from './_lib/errors.js';
 import { articleRowToDTO, type ArticleDTO, type ArticleRow } from './_lib/types.js';
 
 function requireAuth(request: Request): boolean {
@@ -33,10 +35,10 @@ export async function POST(request: Request): Promise<Response> {
       .insert({
         newsletter_id: body.newsletterId,
         position: body.position,
-        title: body.title,
+        title: sanitizeHtml(body.title),
         image_url: body.imageUrl,
-        body: body.body,
-        highlight: body.highlight,
+        body: sanitizeHtml(body.body),
+        highlight: body.highlight != null ? sanitizeHtml(body.highlight) : null,
       })
       .select('*')
       .single<ArticleRow>();
@@ -48,7 +50,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(dto, { status: 201 });
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }
 
@@ -62,10 +64,10 @@ export async function PUT(request: Request): Promise<Response> {
       .from('articles')
       .update({
         position: body.position,
-        title: body.title,
+        title: sanitizeHtml(body.title),
         image_url: body.imageUrl,
-        body: body.body,
-        highlight: body.highlight,
+        body: sanitizeHtml(body.body),
+        highlight: body.highlight != null ? sanitizeHtml(body.highlight) : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', body.id)
@@ -79,7 +81,7 @@ export async function PUT(request: Request): Promise<Response> {
     return Response.json(dto);
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }
 
@@ -102,7 +104,7 @@ export async function PATCH(request: Request): Promise<Response> {
     return new Response(null, { status: 204 });
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }
 
@@ -120,6 +122,6 @@ export async function DELETE(request: Request): Promise<Response> {
     return new Response(null, { status: 204 });
   } catch (err) {
     console.error(err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return serverErrorResponse();
   }
 }

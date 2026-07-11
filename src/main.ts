@@ -6,6 +6,8 @@ import { Editor } from './edit/edit';
 import { bindPanelResize } from './edit/panel';
 import { getNewsletter, saveNewsletter, logout } from './api/api';
 import { exportJSON, importJSON } from './api/importExport';
+import { openEmailPreview } from './edit/emailPreview';
+import { setupMenu } from './edit/menu';
 
 const root = document.getElementById('newsletterRoot') as HTMLElement;
 const saveIndicator = document.getElementById('saveIndicator') as HTMLElement;
@@ -19,6 +21,14 @@ const bootLoader = document.getElementById('bootLoader') as HTMLElement;
 
 const editor = new Editor({ root, saveIndicator, fileInput, panelAside, panelScrim, appContent });
 bindPanelResize(panelResizeHandle, panelAside);
+
+// Menus déroulants de la toolbar (Exporter / Plus).
+const exportTrigger = document.getElementById('btnExportMenu');
+const exportMenu = document.getElementById('exportMenu');
+if (exportTrigger && exportMenu) setupMenu(exportTrigger, exportMenu);
+const moreTrigger = document.getElementById('btnMoreMenu');
+const moreMenu = document.getElementById('moreMenu');
+if (moreTrigger && moreMenu) setupMenu(moreTrigger, moreMenu);
 
 // Le panneau (sticky) doit se caler sous la toolbar (elle aussi sticky) : on
 // mesure sa hauteur réelle, qui varie selon la largeur de fenêtre (flex-wrap).
@@ -59,6 +69,10 @@ document.getElementById('btnPrint')?.addEventListener('click', () => window.prin
 
 document.getElementById('btnExport')?.addEventListener('click', () => {
   exportJSON(editor.serialize());
+});
+
+document.getElementById('btnExportEmail')?.addEventListener('click', () => {
+  openEmailPreview(editor.serialize());
 });
 
 document.getElementById('btnImportTrigger')?.addEventListener('click', () => {

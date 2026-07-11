@@ -57,13 +57,30 @@ export class Editor {
     this.saveTimer = setTimeout(async () => {
       try {
         const data = this.serialize();
-        await saveNewsletter(data);
+        const saved = await saveNewsletter(data);
+        this.syncArticleIds(saved.articles);
         this.setSaveIndicator('Enregistré', 'saved');
       } catch (err) {
         this.setSaveIndicator('Erreur de sauvegarde', 'error');
         console.error(err);
       }
     }, SAVE_DELAY_MS);
+  }
+
+  /**
+   * Remplace les ids temporaires (`tmp-*`, posés par `addArticle()`) par les
+   * vrais UUID renvoyés par le serveur après l'INSERT. Sans ça, une sauvegarde
+   * suivante renverrait le même article comme "nouveau" (id toujours non-UUID)
+   * et créerait un doublon en base.
+   */
+  private syncArticleIds(saved: Article[]): void {
+    const articleEls = Array.from(this.root.querySelectorAll<HTMLElement>('#articlesContainer .art'));
+    articleEls.forEach((el, i) => {
+      const realId = saved[i]?.id;
+      if (realId && el.getAttribute('data-id') !== realId) {
+        el.setAttribute('data-id', realId);
+      }
+    });
   }
 
   /** Ferme le panneau (appelé après un import/reset qui reconstruit la feuille). */

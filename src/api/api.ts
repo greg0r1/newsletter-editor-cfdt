@@ -8,7 +8,9 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     throw new Error(`${init?.method ?? 'GET'} ${input} → ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  // Réponse de notre propre backend (déjà validée côté serveur) : on fait
+  // confiance au contrat de type, contrairement à un body entrant côté API.
+  return (await res.json()) as unknown as T;
 }
 
 export function getNewsletter(): Promise<Newsletter> {

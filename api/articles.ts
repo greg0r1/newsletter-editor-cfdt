@@ -3,6 +3,7 @@ import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib
 import { sanitizeHtml } from './_lib/sanitize.js';
 import { serverErrorResponse } from './_lib/errors.js';
 import { articleRowToDTO, type ArticleDTO, type ArticleRow } from './_lib/types.js';
+import { isCreateArticleBody, isReorderArticlesBody, isUpdateArticleBody } from './_lib/validate.js';
 
 function requireAuth(request: Request): boolean {
   const cookies = parseCookies(request.headers.get('cookie') ?? undefined);
@@ -21,14 +22,11 @@ export async function POST(request: Request): Promise<Response> {
   if (!requireAuth(request)) return new Response('Unauthorized', { status: 401 });
 
   try {
-    const body = (await request.json()) as {
-      newsletterId: string;
-      position: number;
-      title: string;
-      imageUrl: string | null;
-      body: string;
-      highlight: string | null;
-    };
+    const rawBody: unknown = await request.json();
+    if (!isCreateArticleBody(rawBody)) {
+      return Response.json({ error: 'Requête invalide' }, { status: 400 });
+    }
+    const body = rawBody;
 
     const { data, error } = await supabase
       .from('articles')
@@ -58,7 +56,11 @@ export async function PUT(request: Request): Promise<Response> {
   if (!requireAuth(request)) return new Response('Unauthorized', { status: 401 });
 
   try {
-    const body = (await request.json()) as ArticleDTO;
+    const rawBody: unknown = await request.json();
+    if (!isUpdateArticleBody(rawBody)) {
+      return Response.json({ error: 'Requête invalide' }, { status: 400 });
+    }
+    const body = rawBody;
 
     const { data, error } = await supabase
       .from('articles')
@@ -89,7 +91,11 @@ export async function PATCH(request: Request): Promise<Response> {
   if (!requireAuth(request)) return new Response('Unauthorized', { status: 401 });
 
   try {
-    const body = (await request.json()) as { newsletterId: string; orderedIds: string[] };
+    const rawBody: unknown = await request.json();
+    if (!isReorderArticlesBody(rawBody)) {
+      return Response.json({ error: 'Requête invalide' }, { status: 400 });
+    }
+    const body = rawBody;
 
     await Promise.all(
       body.orderedIds.map((id, index) =>

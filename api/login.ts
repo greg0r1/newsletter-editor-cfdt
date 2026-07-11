@@ -1,6 +1,7 @@
 import { buildLogoutCookieHeader, buildSessionCookieHeader, createSessionCookieValue } from './_lib/auth.js';
 import { serverErrorResponse } from './_lib/errors.js';
 import { clearAttempts, isRateLimited, recordFailedAttempt } from './_lib/rateLimit.js';
+import { isLoginBody } from './_lib/validate.js';
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -8,7 +9,11 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ error: 'Trop de tentatives. Réessayez dans quelques minutes.' }, { status: 429 });
     }
 
-    const body = (await request.json()) as { password?: string };
+    const rawBody: unknown = await request.json();
+    if (!isLoginBody(rawBody)) {
+      return Response.json({ error: 'Requête invalide' }, { status: 400 });
+    }
+    const body = rawBody;
     const expected = process.env.AUTH_PASSWORD;
 
     if (!expected) {

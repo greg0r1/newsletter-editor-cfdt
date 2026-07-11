@@ -3,6 +3,7 @@ import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib
 import { sanitizeHtml } from './_lib/sanitize.js';
 import { serverErrorResponse } from './_lib/errors.js';
 import { articleRowToDTO, type ArticleRow, type ArticleVersionRow } from './_lib/types.js';
+import { isRestoreArticleVersionBody } from './_lib/validate.js';
 
 function requireAuth(request: Request): boolean {
   const cookies = parseCookies(request.headers.get('cookie') ?? undefined);
@@ -44,7 +45,11 @@ export async function POST(request: Request): Promise<Response> {
   if (!requireAuth(request)) return new Response('Unauthorized', { status: 401 });
 
   try {
-    const body = (await request.json()) as { articleId: string; versionId: string };
+    const rawBody: unknown = await request.json();
+    if (!isRestoreArticleVersionBody(rawBody)) {
+      return Response.json({ error: 'Requête invalide' }, { status: 400 });
+    }
+    const body = rawBody;
 
     const { data: versionRow, error: versionError } = await supabase
       .from('article_versions')

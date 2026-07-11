@@ -107,7 +107,7 @@ function imageField(label: string, action: string, canRemove: boolean): string {
     (label ? `<label class="pf-label">${label}</label>` : '') +
     `<div class="pf-image"><img class="pf-image-preview" data-panel-preview="${action}" alt=""></div>` +
     `<div class="pf-row">` +
-    `<button type="button" class="tbtn primary" data-panel="image" data-image-action="${action}">${ICONS.image} Changer l'image</button>` +
+    `<button type="button" class="tbtn" data-panel="image" data-image-action="${action}">${ICONS.image} Changer l'image</button>` +
     removeBtn +
     `</div>`
   );

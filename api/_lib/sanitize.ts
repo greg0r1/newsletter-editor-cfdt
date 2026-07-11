@@ -20,20 +20,28 @@ const ALLOWED_ATTR = new Set(['href', 'style']);
 const VOID_TAGS = new Set(['br']);
 const ALLOWED_HREF_RE = /^(?:https?:|mailto:)/i;
 
-function escapeText(text: string): string {
+export function decodeEntities(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function decodeEntities(text: string): string {
-  return text
+    .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&amp;/g, '&');
+}
+
+/**
+ * Décode d'abord les entités déjà présentes (ex. `&nbsp;` inséré par le
+ * `contenteditable`) avant de ré-échapper : sans ce décodage préalable,
+ * chaque sauvegarde ré-échappait le `&` d'une entité existante
+ * (`&nbsp;` → `&amp;nbsp;` → `&amp;amp;nbsp;` → ...) puisque sanitizeHtml
+ * est appelé à chaque frappe (debounce) sur du texte déjà sanitizé.
+ */
+function escapeText(text: string): string {
+  return decodeEntities(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function parseAttributes(raw: string): Map<string, string> {
@@ -61,7 +69,15 @@ function sanitizeAttributes(tag: string, attrs: Map<string, string>): string {
       // seule la couleur de texte est produite par le panneau (voir icons.ts).
       if (!/^color\s*:\s*#[0-9a-fA-F]{3,8}\s*;?\s*$/.test(value.trim())) continue;
     }
-    const escapedValue = value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    // `value` a été décodé par parseAttributes (les entités `&lt;`/`&gt;`/`&quot;`
+    // sont redevenues des caractères littéraux). On doit donc TOUT ré-échapper,
+    // `<` et `>` compris : sinon un `href` piégé (`…&quot;&gt;&lt;img onerror=…`)
+    // ressortirait avec des `<`/`>` bruts et s'évaderait de l'attribut (XSS stockée).
+    const escapedValue = value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
     out += ` ${name}="${escapedValue}"`;
   }
   return out;
@@ -74,9 +90,18 @@ function sanitizeAttributes(tag: string, attrs: Map<string, string>): string {
  * être la seule ligne de défense contre le XSS stocké.
  */
 const STRIPPED_WITH_CONTENT_RE = /<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi;
+// Bloc <script>/<style> ouvert mais jamais refermé (collé tronqué, balise
+// fermante malformée) : sans ça, seule la balise ouvrante est retirée par le
+// tokenizer et le code source brut qui suit fuit en texte. On retire donc tout
+// depuis la balise ouvrante jusqu'à la fin. À appliquer APRÈS le RE ci-dessus
+// (qui retire les blocs correctement fermés) pour ne pas manger du contenu
+// légitime placé après un bloc clos.
+const STRIPPED_UNCLOSED_RE = /<(script|style)\b[^>]*>[\s\S]*$/gi;
 
 export function sanitizeHtml(input: string): string {
-  const withoutDangerousBlocks = input.replace(STRIPPED_WITH_CONTENT_RE, '');
+  const withoutDangerousBlocks = input
+    .replace(STRIPPED_WITH_CONTENT_RE, '')
+    .replace(STRIPPED_UNCLOSED_RE, '');
   const tagRe = /<\/?([a-zA-Z][a-zA-Z0-9]*)([^>]*)>/g;
   let out = '';
   let lastIndex = 0;

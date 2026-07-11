@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "vercel-build": "tsc -b && vite build",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "test": "node --import tsx --test api/_lib/sanitize.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

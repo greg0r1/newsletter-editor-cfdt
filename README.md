@@ -40,12 +40,11 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Le front est servi par Vite ; les fonctions `/api/*` nécessitent `vercel dev`
-pour fonctionner localement (Vite seul ne les exécute pas) :
-
-```bash
-npx vercel dev
-```
+Le front est servi par Vite, mais les fonctions `/api/*` ont besoin de
+`vercel dev` pour s'exécuter localement (Vite seul ne les exécute pas).
+`npm run dev` orchestre déjà tout : récupération des variables d'env Vercel
+(`vercel env pull`) puis `vercel dev` (voir [`scripts/dev.sh`](./scripts/dev.sh)) —
+une seule commande à lancer, pas besoin d'appeler `vercel dev` séparément.
 
 ## Variables d'environnement
 
@@ -56,6 +55,8 @@ npx vercel dev
 | `SUPABASE_URL` | Générée automatiquement par l'intégration Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Générée automatiquement par l'intégration Supabase (jamais exposée au front) |
 | `BLOB_READ_WRITE_TOKEN` | Générée automatiquement par l'intégration Vercel Blob |
+| `KV_REST_API_URL` | Optionnelle, générée par l'intégration Vercel Marketplace Upstash. Sans elle, le rate limiting de `/api/login` est désactivé silencieusement (le login reste fonctionnel). |
+| `KV_REST_API_TOKEN` | Optionnelle, idem `KV_REST_API_URL` |
 
 ## Build
 
@@ -70,6 +71,7 @@ npm run build
 3. Dans le dashboard Vercel du projet :
    - Ajouter l'intégration Marketplace **Supabase** (Database Providers) → génère `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
    - Ajouter l'intégration **Vercel Blob** (Storage) → génère `BLOB_READ_WRITE_TOKEN`.
+   - (Optionnel) Ajouter l'intégration **Upstash** (Marketplace) → génère `KV_REST_API_URL` / `KV_REST_API_TOKEN`, active le rate limiting du login.
    - Renseigner manuellement `AUTH_PASSWORD` et `AUTH_SECRET` dans Settings → Environment Variables.
 4. Exécuter `supabase/schema.sql` dans le projet Supabase provisionné.
 5. (Optionnel) Lancer `npm run seed` en local avec les variables d'environnement de prod pour peupler la base initiale.

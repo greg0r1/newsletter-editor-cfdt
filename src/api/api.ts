@@ -1,4 +1,4 @@
-import type { Article, ArticleVersion, Newsletter } from '../state/state';
+import type { Article, ArticleVersion, BlobImage, Newsletter } from '../state/state';
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, {
@@ -61,6 +61,10 @@ export function restoreArticleVersion(articleId: string, versionId: string): Pro
     method: 'POST',
     body: JSON.stringify({ articleId, versionId }),
   });
+}
+
+export function listImages(): Promise<BlobImage[]> {
+  return request<BlobImage[]>('/api/images');
 }
 
 export async function uploadImage(blob: Blob, filename: string): Promise<string> {

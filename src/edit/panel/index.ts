@@ -42,6 +42,23 @@ export class EditPanel {
   private selection: Selection | null = null;
   private dirty = false;
   /**
+   * Actions d'annulation ciblées, empilées à CHAQUE mutation structurelle
+   * (image, encart) via recordUndo() — pas un snapshot HTML global pris une
+   * fois à l'ouverture. Chaque action référence directement le nœud/attribut
+   * qu'elle restaure (insertBefore/remove/setAttribute), jamais outerHTML :
+   * un remplacement de sous-arbre complet est justement ce que CLAUDE.md
+   * interdit pour ces opérations ("SANS re-render complet, pour ne pas
+   * perdre le focus ailleurs sur la page"). Rejouées en ordre inverse par
+   * discardUnsavedChanges() si le panneau ferme sans "Enregistrer". Vidée à
+   * chaque nouvelle mutation entre deux Enregistrer (voir saveAll()), donc
+   * jamais "perdue" après un premier clic Enregistrer suivi d'une nouvelle
+   * modification — contrairement à un snapshot pris une seule fois à
+   * l'ouverture. Ne couvre PAS le déplacement d'article (change sa position
+   * dans le parent, pas son propre contenu) ; ce cas reste appliqué
+   * immédiatement, par choix.
+   */
+  private undoActions: (() => void)[] = [];
+  /**
    * Sections repliées, par id (ex. "article:image"). Partagée entre toutes
    * les sélections/re-rendus du panneau (persiste tant que la page n'est pas
    * rechargée) : replier "Position" sur un article doit rester replié en
@@ -67,6 +84,11 @@ export class EditPanel {
   // ---------------------------------------------------------------- ouverture
 
   open(sel: Selection): void {
+    // Un clic sur un autre bloc pendant que la sélection courante a des
+    // mutations non enregistrées bascule directement dessus (jamais via
+    // close()) : sans ceci, le brouillon précédent serait perdu sans être
+    // annulé dans la feuille — voir discardUnsavedChanges().
+    this.discardUnsavedChanges();
     this.render(sel);
     // Focus sur le premier champ éditable du panneau : légitime à l'ouverture
     // (nouvelle sélection), pas lors d'un simple refresh() sur la sélection
@@ -74,9 +96,26 @@ export class EditPanel {
     this.aside.querySelector<HTMLElement>('.pf-field')?.focus();
   }
 
-  close(): void {
-    this.selection = null;
+  /**
+   * Annule les mutations structurelles (image, encart) non enregistrées de
+   * la sélection courante : rejoue les actions d'annulation empilées par
+   * recordUndo(), en ordre inverse (la dernière mutation défaite en
+   * premier). Ne concerne pas le texte, qui n'a de toute façon jamais quitté
+   * le champ du panneau tant que "Enregistrer" n'a pas été cliqué (voir
+   * syncField()/saveAll()). Remet dirty à zéro dans tous les cas (appelé
+   * aussi bien avant de changer de sélection que pour fermer le panneau).
+   */
+  private discardUnsavedChanges(): void {
+    if (this.dirty) {
+      for (let i = this.undoActions.length - 1; i >= 0; i--) this.undoActions[i]();
+    }
     this.dirty = false;
+    this.undoActions = [];
+  }
+
+  close(): void {
+    this.discardUnsavedChanges();
+    this.selection = null;
     this.clearSelectedMarker();
     this.appContent.classList.remove('panel-open');
     // Laisse le contenu en place le temps de l'animation de sortie (slide),
@@ -89,36 +128,85 @@ export class EditPanel {
     }, 340);
   }
 
+  /**
+   * Reconstruit le HTML du panneau pour `sel`. Ne touche pas à `this.dirty` :
+   * l'appelant décide (open() le remet à false pour une nouvelle sélection,
+   * refresh() le préserve pour ne pas perdre un brouillon "Enregistrer" en
+   * attente déclenché par une mutation structurelle — voir refresh()).
+   */
   private render(sel: Selection): void {
     this.clearSelectedMarker();
     this.selection = sel;
-    this.dirty = false;
     this.markSelected(sel);
     this.aside.innerHTML = this.renderFor(sel);
     this.appContent.classList.add('panel-open');
     this.wireFields();
+    // wireFields() ne pose pas [hidden] sur .pf-dirty : le HTML fraîchement
+    // injecté repart avec l'attribut par défaut du template, il faut donc
+    // réappliquer l'état dirty courant (ex. après une mutation structurelle
+    // qui a appelé recordUndo() juste avant refresh()).
+    if (this.dirty) this.aside.querySelector<HTMLElement>('.pf-dirty')?.removeAttribute('hidden');
   }
 
   /**
    * Resynchronise le panneau après une mutation structurelle de la feuille
    * (déplacement/suppression d'article, changement d'image, toggle encart).
-   * Ces actions passent déjà par le bouton "Enregistrer" (voir bindEvents),
-   * donc aucune modif de champ texte n'est en jeu ici. Contrairement à
-   * open(), ne vole pas le focus : l'utilisateur reste généralement sur le
-   * bouton qu'il vient de cliquer. Si le bloc édité n'existe plus, ferme le
-   * panneau.
+   * Ces actions n'écrivent plus au serveur elles-mêmes (voir recordUndo()) :
+   * elles laissent le panneau en état "modifications non enregistrées",
+   * exactement comme la frappe dans un champ texte, donc l'appelant doit
+   * avoir appelé recordUndo() avant refresh() si la mutation doit apparaître
+   * comme en attente. Contrairement à open(), ne vole pas le focus :
+   * l'utilisateur reste généralement sur le bouton qu'il vient de cliquer.
+   * Si le bloc édité n'existe plus, ferme le panneau.
    */
   refresh(): void {
     if (!this.selection) return;
     if (this.selection.kind === 'article' && !this.selection.el.isConnected) {
       this.selection = null;
       this.dirty = false;
+      this.undoActions = [];
       this.clearSelectedMarker();
       this.aside.innerHTML = '';
       this.appContent.classList.remove('panel-open');
       return;
     }
     this.render(this.selection);
+  }
+
+  /**
+   * Empile `undo`, une opération DOM ciblée (insertBefore/remove/
+   * setAttribute — jamais un remplacement de sous-arbre complet) qui annule
+   * exactement la mutation structurelle que l'Editor vient d'appliquer à la
+   * feuille, et marque le panneau "modifications non enregistrées". Utilisé
+   * pour l'image et l'encart mis en avant, qui ne sauvegardent plus
+   * immédiatement : elles attendent désormais le même clic sur "Enregistrer"
+   * que les champs texte, et se laissent défaire si l'utilisateur ferme sans
+   * enregistrer (voir discardUnsavedChanges()).
+   */
+  recordUndo(undo: () => void): void {
+    this.undoActions.push(undo);
+    this.setDirty();
+  }
+
+  /**
+   * Vide les actions d'annulation en attente sans les rejouer, et efface le
+   * badge "non enregistré" — comme saveAll(), mais sans passer par
+   * cb.onChange() (l'appelant gère lui-même sa propre sauvegarde immédiate,
+   * qui sérialise de toute façon tout le DOM et englobe donc ce brouillon).
+   * Deux usages : (1) le bloc édité vient d'être supprimé (deleteArticle) —
+   * ses mutations en attente n'ont plus de sens à annuler puisque le bloc
+   * entier disparaît (les rejouer ne planterait pas — insertBefore/remove
+   * sur un nœud détaché ne lève pas, contrairement à l'ancien outerHTML sur
+   * un nœud sans parent — mais ce serait du travail inutile) ; (2) l'article
+   * est déplacé (moveArticle/moveArticleTo) — la sauvegarde immédiate du
+   * déplacement confirme aussi, de fait, toute mutation en attente sur ce
+   * même article : laisser le badge affiché serait trompeur (annulable en
+   * apparence, déjà envoyé au serveur en réalité).
+   */
+  discardPendingUndo(): void {
+    this.undoActions = [];
+    this.dirty = false;
+    this.aside.querySelector<HTMLElement>('.pf-dirty')?.setAttribute('hidden', '');
   }
 
   // ------------------------------------------------------------- marqueur DOM
@@ -128,12 +216,16 @@ export class EditPanel {
   }
 
   private markSelected(sel: Selection): void {
-    const el = sel.kind === 'article' ? sel.el : this.blockEl(sel.kind);
-    el?.classList.add('selected');
+    this.targetEl(sel)?.classList.add('selected');
   }
 
   private blockEl(kind: 'mast' | 'edito' | 'info' | 'summer'): HTMLElement | null {
     return this.root.querySelector<HTMLElement>(`[data-block="${kind}"]`);
+  }
+
+  /** Élément DOM du bloc édité dans la feuille (article ou mast/edito/info/summer). */
+  private targetEl(sel: Selection): HTMLElement | null {
+    return sel.kind === 'article' ? sel.el : this.blockEl(sel.kind);
   }
 
   // ------------------------------------------------------------------- rendu
@@ -214,6 +306,7 @@ export class EditPanel {
   private saveAll(): void {
     this.aside.querySelectorAll<HTMLElement>('[data-mirror]').forEach((field) => this.syncField(field));
     this.dirty = false;
+    this.undoActions = []; // les mutations en cours sont désormais actées, plus rien à annuler
     this.aside.querySelector<HTMLElement>('.pf-dirty')?.setAttribute('hidden', '');
     this.cb.onChange();
   }

@@ -11,7 +11,6 @@ import { setupMenu } from './edit/menu';
 
 const root = document.getElementById('newsletterRoot') as HTMLElement;
 const saveIndicator = document.getElementById('saveIndicator') as HTMLElement;
-const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const importInput = document.getElementById('importInput') as HTMLInputElement;
 const panelAside = document.getElementById('editPanel') as HTMLElement;
 const panelResizeHandle = document.getElementById('panelResizeHandle') as HTMLElement;
@@ -19,7 +18,7 @@ const panelScrim = document.getElementById('panelScrim');
 const appContent = document.getElementById('appContent') as HTMLElement;
 const bootLoader = document.getElementById('bootLoader') as HTMLElement;
 
-const editor = new Editor({ root, saveIndicator, fileInput, panelAside, panelScrim, appContent });
+const editor = new Editor({ root, saveIndicator, panelAside, panelScrim, appContent });
 bindPanelResize(panelResizeHandle, panelAside);
 
 // Menus déroulants de la toolbar (Exporter / Plus).

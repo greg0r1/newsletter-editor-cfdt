@@ -50,3 +50,9 @@ export interface ArticleVersion {
   snapshot: Article;
   createdAt: string;
 }
+
+export interface BlobImage {
+  url: string;
+  uploadedAt: string;
+  size: number;
+}

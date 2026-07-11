@@ -1,7 +1,7 @@
 import type { Article, Newsletter } from '../state/state';
 import { articleHTML, renumber } from '../render/render';
-import { saveNewsletter, uploadImage } from '../api/api';
-import { compressImage } from './image';
+import { saveNewsletter } from '../api/api';
+import { openImagePicker } from './imagePicker';
 import { EditPanel, type Selection } from './panel';
 
 const SAVE_DELAY_MS = 700;
@@ -11,22 +11,18 @@ export type ImageTarget = 'article' | 'mast' | 'edito' | 'summer';
 export class Editor {
   private root: HTMLElement;
   private saveIndicator: HTMLElement;
-  private fileInput: HTMLInputElement;
   private panel: EditPanel;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
-  private pendingImageTarget: { kind: ImageTarget; articleEl: HTMLElement | null } | null = null;
 
   constructor(options: {
     root: HTMLElement;
     saveIndicator: HTMLElement;
-    fileInput: HTMLInputElement;
     panelAside: HTMLElement;
     panelScrim?: HTMLElement | null;
     appContent: HTMLElement;
   }) {
     this.root = options.root;
     this.saveIndicator = options.saveIndicator;
-    this.fileInput = options.fileInput;
     this.panel = new EditPanel({
       aside: options.panelAside,
       root: this.root,
@@ -151,6 +147,21 @@ export class Editor {
 
   // -------------------------------------------------- mutations sur articles
 
+  /**
+   * Sauvegarde immédiate (pas recordUndo()) : le déplacement change la
+   * position dans le parent, pas le contenu du bloc édité, donc il n'entre
+   * pas dans le mécanisme d'annulation à la fermeture (voir EditPanel.
+   * discardUnsavedChanges()) — afficher "Modifications non enregistrées"
+   * ici serait trompeur puisqu'il n'y aurait rien à en faire.
+   *
+   * Comme cette sauvegarde sérialise TOUT le DOM (Editor.serialize()), elle
+   * enverrait de toute façon au serveur une éventuelle mutation en attente
+   * sur ce même article (image/encart non encore "Enregistrée") — on
+   * confirme donc explicitement ce brouillon plutôt que de laisser le
+   * panneau croire qu'il reste annulable alors que le serveur l'aura déjà
+   * reçu (discardPendingUndo() vide la pile d'annulation sans y toucher,
+   * l'article garde sa nouvelle image/encart tel quel).
+   */
   private moveArticle(artEl: HTMLElement, dir: 'up' | 'down'): void {
     const parent = artEl.parentElement;
     if (!parent) return;
@@ -162,6 +173,7 @@ export class Editor {
       if (next?.classList.contains('art')) parent.insertBefore(next, artEl);
     }
     renumber(this.root);
+    this.panel.discardPendingUndo();
     this.panel.refresh();
     this.save();
   }
@@ -176,23 +188,39 @@ export class Editor {
     const goingDown = articles.indexOf(artEl) < clamped;
     parent.insertBefore(artEl, goingDown ? target.nextElementSibling : target);
     renumber(this.root);
+    this.panel.discardPendingUndo();
     this.panel.refresh();
     this.save();
   }
 
+  /**
+   * Seule mutation structurelle qui sauvegarde encore immédiatement (au lieu
+   * d'attendre "Enregistrer") : elle ferme le panneau juste après (voir
+   * EditPanel.bindEvents, case 'delete'), qui remettrait sinon le badge
+   * "non enregistré" à zéro sans jamais avoir pu être validé. La confirmation
+   * confirm() ci-dessous joue déjà le rôle de garde-fou contre l'erreur.
+   */
   private deleteArticle(artEl: HTMLElement): boolean {
     if (!confirm('Supprimer cet article ?')) return false;
     artEl.remove();
     renumber(this.root);
+    // Les mutations en attente sur cet article (image, encart) n'ont plus
+    // de sens à annuler puisque le bloc entier disparaît avec la sauvegarde
+    // immédiate ci-dessous — voir EditPanel.discardPendingUndo().
+    this.panel.discardPendingUndo();
     this.save();
     return true;
   }
 
   private toggleHighlight(artEl: HTMLElement): HTMLElement | null {
-    const existing = artEl.querySelector('.art-highlight');
+    const existing = artEl.querySelector<HTMLElement>('.art-highlight');
     if (existing) {
+      const anchor = existing.previousElementSibling;
       existing.remove();
-      this.save();
+      this.panel.recordUndo(() => {
+        if (anchor) anchor.after(existing);
+        else artEl.prepend(existing);
+      });
       return null;
     }
     const hl = document.createElement('div');
@@ -200,7 +228,7 @@ export class Editor {
     hl.setAttribute('data-field', 'highlight');
     hl.textContent = 'Texte mis en avant…';
     artEl.appendChild(hl);
-    this.save();
+    this.panel.recordUndo(() => hl.remove());
     return hl;
   }
 
@@ -230,25 +258,35 @@ export class Editor {
   // ------------------------------------------------------------- images
 
   private requestImage(kind: ImageTarget, articleEl: HTMLElement | null): void {
-    this.pendingImageTarget = { kind, articleEl };
-    this.fileInput.click();
+    openImagePicker((url) => this.applyImage({ kind, articleEl }, url));
   }
 
   private removeArticleImage(artEl: HTMLElement): void {
-    artEl.querySelector('.img-wrap')?.remove();
-    this.save();
+    const wrap = artEl.querySelector<HTMLElement>('.img-wrap');
+    if (!wrap) return;
+    const anchor = wrap.previousElementSibling;
+    wrap.remove();
+    this.panel.recordUndo(() => {
+      if (anchor) anchor.after(wrap);
+      else artEl.prepend(wrap);
+    });
   }
 
-  private async handleImageFile(file: File): Promise<void> {
-    const target = this.pendingImageTarget;
-    if (!file || !target) return;
-    const compressed = await compressImage(file, 560, 0.82);
-    const url = await uploadImage(compressed, file.name);
+  /** Change la `src` d'un `<img>` existant ; empile l'annulation (ancienne src). */
+  private replaceImageSrc(img: HTMLImageElement, url: string): void {
+    const previous = img.getAttribute('src');
+    img.setAttribute('src', url);
+    this.panel.recordUndo(() => {
+      if (previous != null) img.setAttribute('src', previous);
+      else img.removeAttribute('src');
+    });
+  }
 
+  private applyImage(target: { kind: ImageTarget; articleEl: HTMLElement | null }, url: string): void {
     if (target.kind === 'article' && target.articleEl) {
-      const wrap = target.articleEl.querySelector('.img-wrap');
+      const wrap = target.articleEl.querySelector<HTMLImageElement>('.img-wrap img');
       if (wrap) {
-        wrap.querySelector('img')?.setAttribute('src', url);
+        this.replaceImageSrc(wrap, url);
       } else {
         const newWrap = document.createElement('div');
         newWrap.className = 'img-wrap';
@@ -256,17 +294,21 @@ export class Editor {
         // L'image se place après le titre de l'article.
         const head = target.articleEl.querySelector('.art-head');
         head?.after(newWrap);
+        this.panel.recordUndo(() => newWrap.remove());
       }
     } else if (target.kind === 'mast') {
-      this.root.querySelector('.mast-right img')?.setAttribute('src', url);
+      const img = this.root.querySelector<HTMLImageElement>('.mast-right img');
+      if (img) this.replaceImageSrc(img, url);
     } else if (target.kind === 'edito') {
-      this.root.querySelector('.edito-sun img')?.setAttribute('src', url);
+      const img = this.root.querySelector<HTMLImageElement>('.edito-sun img');
+      if (img) this.replaceImageSrc(img, url);
     } else if (target.kind === 'summer') {
-      this.root.querySelector('.box-summer .sun-mini')?.setAttribute('src', url);
+      const img = this.root.querySelector<HTMLImageElement>('.box-summer .sun-mini');
+      if (img) this.replaceImageSrc(img, url);
     }
 
-    this.pendingImageTarget = null;
-    this.save();
+    // Aperçu immédiat dans la feuille, mais la sauvegarde serveur attend
+    // désormais le clic sur "Enregistrer" du panneau — comme un champ texte.
     this.panel.refresh();
   }
 
@@ -288,12 +330,6 @@ export class Editor {
     this.root.addEventListener('click', (e) => {
       const sel = this.selectionFromTarget(e.target as HTMLElement);
       if (sel) this.panel.open(sel);
-    });
-
-    this.fileInput.addEventListener('change', (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      (e.target as HTMLInputElement).value = '';
-      if (file) void this.handleImageFile(file);
     });
   }
 }

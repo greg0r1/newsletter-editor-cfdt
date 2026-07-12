@@ -31,6 +31,14 @@ mot de passe.
   l'URL publique à stocker côté front dans l'article.
 - `api/login.ts` — vérifie le mot de passe (`process.env.AUTH_PASSWORD`), pose
   un cookie httpOnly signé (`process.env.AUTH_SECRET`).
+- `api/settings.ts` — GET/PUT du logo et titre du **chrome de l'application**
+  (barre d'outils), distinct du contenu de la newsletter. Table `app_settings`,
+  singleton forcé par clé primaire fixe (`id boolean primary key default true`,
+  contrainte `check(id)`) : pas de SELECT préalable pour trouver la ligne,
+  `saveAppSettings` fait un `upsert(...).select().single()` direct (1 aller-
+  retour). Ne pas revenir à un id `uuid` + "ligne la plus récente" : c'était
+  la version initiale, fragile (risque de duplication silencieuse, dépendait
+  d'un seed manuel jamais garanti).
 - Toute la logique d'accès à Supabase reste **côté serveur uniquement**
   (clé service role jamais exposée au navigateur).
 
@@ -45,8 +53,17 @@ mot de passe.
   à cet instant), created_at. Une nouvelle ligne à **chaque sauvegarde**,
   jamais de UPDATE qui écrase l'historique. Permet de restaurer une version
   antérieure d'un article.
-- Le pied de page n'est dans aucune table : il est fixe, codé en dur dans le
-  template front, jamais éditable, jamais stocké.
+- `app_settings` — logo et titre du **chrome de l'application** (barre
+  d'outils, hors zone newsletter), distinct de `newsletters`. Singleton forcé
+  par clé primaire fixe (`id boolean`), pas par convention — voir section
+  Backend ci-dessus. Ne pas confondre avec le logo du masthead de la
+  newsletter (fixe, codé en dur) ni celui du pied de page
+  (`mast.footerLogoUrl`, contenu éditorial de la newsletter, voir plus bas).
+- Le pied de page n'est dans aucune table dédiée : son texte est fixe, codé
+  en dur dans le template front, jamais éditable, jamais stocké. Seule
+  exception explicite : le logo du pied de page (`mast.footerLogoUrl`) est
+  éditable depuis le panneau de l'éditeur (bloc "En-tête"), au même titre que
+  les autres champs `mast` — voir "À ne pas faire" pour la nuance exacte.
 
 ### Front (`src/`)
 Organisé par couche technique, un sous-dossier par responsabilité :
@@ -67,8 +84,17 @@ Organisé par couche technique, un sous-dossier par responsabilité :
 - `src/api/importExport.ts` — export JSON (Blob + lien de téléchargement),
   import JSON (FileReader + validation basique du schéma avant envoi à l'API).
 - `src/styles/` — `style.css` (app), `print.css` (règles d'impression, voir
-  section dédiée ci-dessous), `boot.css` (écran de chargement initial).
+  section dédiée ci-dessous), `boot.css` (écran de chargement initial),
+  `theme.css` (palettes de couleurs + mode sombre du chrome, voir section
+  Thème/dark mode — **partagé** entre `style.css` et `config/style.css` via
+  `@import`, ne pas dupliquer son contenu dans un nouveau fichier).
 - `src/main.ts` — point d'entrée, câble les modules ci-dessus entre eux.
+- `config/` — page `/config/` (logo + titre du chrome, palette de couleurs,
+  mode sombre), suit exactement le pattern du dossier `login/` : `index.html`
+  autonome + `main.ts` + `style.css` dédiés, déclarés comme entrée
+  supplémentaire dans `vite.config.ts` (`rollupOptions.input`). Protégée par
+  le même middleware que le reste du site (aucune exclusion à ajouter).
+  Accessible depuis le menu "Plus" de la barre d'outils.
 - `middleware.ts` à la racine du projet (Routing Middleware Vercel, convention
   2026 : export par défaut `function middleware(request: Request): Response`,
   `export const config = { runtime: 'nodejs', matcher: [...] }`, on continue la
@@ -121,15 +147,53 @@ métier) : séparer par responsabilité DDD plutôt que par couche technique pur
 - Le nombre de pages n'est PAS fixé : il dépend du volume de contenu. C'est
   voulu, ne pas essayer de forcer un nombre de pages précis.
 
+## Thème de couleurs et mode sombre (chrome de l'application uniquement)
+- Portent **uniquement** sur les variables du chrome de l'éditeur (`--accent`,
+  `--accent-hover`, `--accent-soft`, `--accent-ring`, `--g0`..`--g9` et les
+  rôles dérivés `--app-bg`/`--surface`/`--border`/`--text`/etc.). Ne touchent
+  **jamais** aux couleurs figées de la feuille imprimée CFDT (`--orange`,
+  `--navy`, `--cream`, `--peach`, `--lav`, `--ink`, `--muted`, `--line`,
+  commentées "NE PAS CHANGER" dans `style.css`) : la newsletter imprimée
+  rend exactement pareil en mode sombre qu'en mode clair.
+- Mécanisme : attributs `data-theme="orange|blue|green|violet"` et
+  `data-color-scheme="light|dark"` sur `<html>`, qui activent des blocs
+  `:root[data-theme=...]`/`:root[data-color-scheme="dark"]` dans
+  `src/styles/theme.css` (fichier partagé, voir section Front). Choix
+  stockés en **`localStorage`** (`cfdt-editor-theme`, `cfdt-editor-color-
+  scheme`) — préférence d'affichage locale à l'appareil, pas une donnée
+  métier de la newsletter, donc ce n'est pas une violation de la règle
+  "pas de localStorage comme stockage principal" plus haut. Valeur par
+  défaut : `prefers-color-scheme` du système si rien n'est stocké.
+- `public/theme-boot.js` applique ces attributs **avant tout paint**
+  (anti-flash de contenu non stylé), chargé via `<script src="/theme-boot.js">`
+  classique (pas de `type="module"`, donc synchrone/bloquant) dans `index.html`
+  et `config/index.html`. Doit rester un fichier statique servi depuis
+  `public/` (jamais transformé par Vite/bundlé, jamais un script inline) :
+  la CSP du projet (`vercel.json`, `script-src 'self'`) bloque silencieusement
+  tout `<script>` inline sans lever d'exception JS catchable — c'est un piège
+  déjà rencontré une fois, ne pas réintroduire de script anti-FOUC inline.
+  Réagit aussi à `pageshow`/`event.persisted` pour se réappliquer après une
+  restauration bfcache (retour arrière navigateur), qui ne réexécute pas les
+  scripts classiques du `<head>`.
+
 ## Modèle de données (résumé, TypeScript côté front)
 ```ts
 interface Newsletter {
-  mast: { orgLines: string; titleAccent: string; titleRest: string; period: string; image: string };
+  mast: {
+    orgLines: string; titleAccent: string; titleRest: string; period: string;
+    image: string;
+    footerLogoUrl: string; // logo du pied de page, éditable (voir "À ne pas faire")
+  };
   edito: { hello: string; body: string; signature: string; image: string };
   articles: Article[];
   infoBox: { title: string; body: string };
   summerBox: { title: string; body: string; signature: string; image: string };
-  // pas de "footer" ici : il est fixe, codé en dur dans le template HTML
+  // pas de "footer" ici : son texte est fixe, codé en dur dans le template HTML
+}
+
+interface AppSettings {
+  logoUrl: string;  // logo du chrome de l'appli (barre d'outils), PAS du masthead newsletter
+  appTitle: string; // titre affiché à côté du logo dans la barre d'outils
 }
 
 interface Article {
@@ -167,7 +231,17 @@ interface Article {
 - Ne pas introduire de framework front (Angular/React/Vue) sans demande explicite.
 - Ne pas transformer les champs `contenteditable` en `<input>`/`<textarea>`
   contrôlés par un state réactif (perte de focus garantie).
-- Ne pas rendre le pied de page éditable.
+- Ne pas rendre le **texte** du pied de page éditable (fixe, codé en dur).
+  Exception explicite et volontaire : le **logo** du pied de page
+  (`mast.footerLogoUrl`) est éditable depuis le panneau de l'éditeur, comme
+  les autres images de `mast` — ne pas le déplacer vers `/config/` (c'est du
+  contenu de la newsletter, pas une préférence d'affichage de l'outil) et ne
+  pas en faire un nouveau champ dans le panneau distinct de "En-tête".
+- Ne pas mélanger le logo/titre du **chrome de l'application**
+  (`AppSettings`, page `/config/`, table `app_settings`) avec le contenu
+  éditorial de la newsletter (`Newsletter.mast`, éditeur principal, table
+  `newsletters`). Ce sont deux agrégats indépendants, avec des cycles de vie
+  et des lieux d'édition différents — voir sections dédiées plus haut.
 - Ne pas stocker d'images en base64 dans Supabase : toujours via Vercel Blob + URL.
 - Ne pas écraser l'historique : chaque sauvegarde d'article crée une nouvelle
   ligne dans `article_versions`, jamais un simple UPDATE qui perd l'ancien état.

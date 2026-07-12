@@ -1,5 +1,6 @@
 import type { Newsletter } from '../state/state';
 import { emailDocumentHTML, exportEmailHTML } from '../api/exportEmail';
+import { registerModal, closeOtherModals } from './modal';
 
 /**
  * Modale d'aperçu de l'export email. Affiche le rendu email (via un <iframe>
@@ -79,9 +80,7 @@ function build(): void {
     if (currentState) exportEmailHTML(currentState);
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlay && !overlay.hidden) close();
-  });
+  registerModal({ overlay, close });
 }
 
 function close(): void {
@@ -91,9 +90,11 @@ function close(): void {
 
 export function openEmailPreview(state: Newsletter): void {
   if (!overlay) build();
+  if (!overlay) return;
+  closeOtherModals(overlay);
   currentState = state;
   if (frame) frame.srcdoc = emailDocumentHTML(state);
   setMode('desktop');
-  if (overlay) overlay.hidden = false;
+  overlay.hidden = false;
   document.body.classList.add('email-modal-open');
 }

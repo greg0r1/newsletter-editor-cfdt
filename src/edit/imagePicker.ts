@@ -1,6 +1,7 @@
 import type { BlobImage } from '../state/state';
 import { listImages, uploadImage } from '../api/api';
 import { compressImage } from './image';
+import { registerModal, closeOtherModals } from './modal';
 
 /**
  * Modale de choix d'image : galerie des images déjà envoyées (Vercel Blob)
@@ -178,9 +179,7 @@ function build(): void {
     if (file) void handleUpload(file);
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlay && !overlay.hidden && !uploading) close();
-  });
+  registerModal({ overlay, close, isBusy: () => uploading });
 }
 
 function close(): void {
@@ -191,10 +190,12 @@ function close(): void {
 
 export function openImagePicker(callback: (url: string) => void): void {
   if (!overlay) build();
+  if (!overlay) return;
+  closeOtherModals(overlay);
   generation++;
   onSelect = callback;
   setUploadError(null);
-  if (overlay) overlay.hidden = false;
+  overlay.hidden = false;
   document.body.classList.add('image-picker-open');
   void loadGallery();
 }

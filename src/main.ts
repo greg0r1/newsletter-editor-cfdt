@@ -7,6 +7,7 @@ import { bindPanelResize } from './edit/panel';
 import { getNewsletter, saveNewsletter, logout } from './api/api';
 import { exportJSON, importJSON } from './api/importExport';
 import { openEmailPreview } from './edit/emailPreview';
+import { openHelp } from './edit/help';
 import { setupMenu } from './edit/menu';
 
 const root = document.getElementById('newsletterRoot') as HTMLElement;
@@ -101,6 +102,8 @@ document.getElementById('btnLogout')?.addEventListener('click', async () => {
   await logout();
   window.location.href = '/login/';
 });
+
+document.getElementById('btnHelp')?.addEventListener('click', () => openHelp());
 
 boot().catch((err) => {
   console.error(err);

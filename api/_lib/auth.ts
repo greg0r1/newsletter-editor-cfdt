@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const AUTH_COOKIE_NAME = 'cfdt_auth';
+// Si cette durée change, mettre à jour SESSION_MAX_AGE_DAYS dans src/edit/help.ts (texte d'aide utilisateur).
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 jours
 // `Secure` est ignoré par certains navigateurs (Firefox, Safari) sur http://localhost,
 // ce qui empêche le cookie d'être posé en dev local avec `vercel dev`.

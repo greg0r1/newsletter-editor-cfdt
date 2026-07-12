@@ -3,6 +3,7 @@ import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib
 import { sanitizeHtml } from './_lib/sanitize.js';
 import { serverErrorResponse } from './_lib/errors.js';
 import { newsletterRowToDTO, type ArticleDTO, type ArticleRow, type NewsletterDTO, type NewsletterRow } from './_lib/types.js';
+import { isNewsletterBody } from './_lib/validate.js';
 
 function requireAuth(request: Request): boolean {
   const cookies = parseCookies(request.headers.get('cookie') ?? undefined);
@@ -170,8 +171,11 @@ export async function PUT(request: Request): Promise<Response> {
   if (!requireAuth(request)) return new Response('Unauthorized', { status: 401 });
 
   try {
-    const body = (await request.json()) as NewsletterDTO;
-    await saveNewsletter(body);
+    const rawBody: unknown = await request.json();
+    if (!isNewsletterBody(rawBody)) {
+      return Response.json({ error: 'Requête invalide' }, { status: 400 });
+    }
+    await saveNewsletter(rawBody);
     const newsletter = await loadNewsletter();
     return Response.json(newsletter);
   } catch (err) {

@@ -32,6 +32,23 @@ create table if not exists article_versions (
 );
 create index if not exists article_versions_article_id_created_at_idx on article_versions(article_id, created_at desc);
 
+-- app_settings : configuration globale du chrome de l'application (logo et
+-- titre affichés dans la toolbar), distincte du contenu éditorial d'une
+-- newsletter — cycle de vie séparé de `newsletters`, une seule ligne comme
+-- `newsletters`. Ne pas confondre avec le logo du masthead/pied de page de la
+-- newsletter imprimée, qui reste dans `newsletters.mast` (contenu éditorial).
+-- Singleton forcé par une clé primaire fixe (`id = true`), pas par convention
+-- ("la ligne la plus récente") : élimine tout risque de ligne dupliquée et
+-- permet un upsert direct côté API sans SELECT préalable ni seed manuel.
+create table if not exists app_settings (
+  id boolean primary key default true,
+  logo_url text not null default '/cfdt-logo.svg',
+  app_title text not null default 'UD CFDT 06',
+  updated_at timestamptz not null default now(),
+  constraint app_settings_singleton check (id)
+);
+insert into app_settings (id) values (true) on conflict (id) do nothing;
+
 -- RLS : aucun accès client (anon/authenticated) n'est prévu, tout passe par
 -- les fonctions serverless api/* avec la clé service_role (qui bypass RLS).
 -- Activer RLS sans policy ferme donc l'accès à la clé anon si elle fuitait,
@@ -39,3 +56,9 @@ create index if not exists article_versions_article_id_created_at_idx on article
 alter table newsletters enable row level security;
 alter table articles enable row level security;
 alter table article_versions enable row level security;
+alter table app_settings enable row level security;
+
+-- Backfill : la ligne `newsletters` existante a été créée avant l'ajout du
+-- champ `footerLogoUrl` à `mast` — sans ce backfill, `mast.footerLogoUrl`
+-- serait absent du JSONB et le pied de page afficherait une image cassée.
+-- update newsletters set mast = mast || jsonb_build_object('footerLogoUrl', '/cfdt-logo-footer.svg') where not (mast ? 'footerLogoUrl');

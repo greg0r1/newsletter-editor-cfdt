@@ -84,7 +84,7 @@ export function fullHTML(state: Newsletter): string {
     `</section>` +
     `<footer class="foot">` +
     `<div class="foot-l">${ICON_PEOPLE}<span>POUR L'ÉGALITÉ<br>POUR LA JUSTICE SOCIALE</span></div>` +
-    `<div class="foot-logo"><img src="/cfdt-logo-footer.svg" alt="CFDT"></div>` +
+    `<div class="foot-logo"><img src="${state.mast.footerLogoUrl || '/cfdt-logo-footer.svg'}" alt="CFDT"></div>` +
     `<div class="foot-r"><span>LA CFDT ENGAGÉE<br>À VOS CÔTÉS</span>${ICON_HAND}</div>` +
     `</footer>` +
     `</div>`

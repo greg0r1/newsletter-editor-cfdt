@@ -84,6 +84,19 @@ function isBlockWithBody(value: unknown): value is { body: string } {
   return typeof value === 'object' && value !== null && typeof (value as Record<string, unknown>).body === 'string';
 }
 
+function isMastShape(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.orgLines === 'string' &&
+    typeof v.titleAccent === 'string' &&
+    typeof v.titleRest === 'string' &&
+    typeof v.period === 'string' &&
+    typeof v.image === 'string' &&
+    typeof v.footerLogoUrl === 'string'
+  );
+}
+
 function isArticleDTOShape(value: unknown): value is ArticleDTO {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -98,6 +111,23 @@ function isArticleDTOShape(value: unknown): value is ArticleDTO {
   );
 }
 
+export interface AppSettingsBody {
+  logoUrl: string;
+  appTitle: string;
+}
+
+export function isAppSettingsBody(value: unknown): value is AppSettingsBody {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.logoUrl === 'string' &&
+    v.logoUrl.trim().length > 0 &&
+    typeof v.appTitle === 'string' &&
+    v.appTitle.trim().length > 0 &&
+    v.appTitle.length <= 200
+  );
+}
+
 export function isNewsletterBody(value: unknown): value is NewsletterDTO {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -106,8 +136,7 @@ export function isNewsletterBody(value: unknown): value is NewsletterDTO {
     isBlockWithBody(v.edito) &&
     isBlockWithBody(v.infoBox) &&
     isBlockWithBody(v.summerBox) &&
-    typeof v.mast === 'object' &&
-    v.mast !== null &&
+    isMastShape(v.mast) &&
     Array.isArray(v.articles) &&
     v.articles.every(isArticleDTOShape)
   );

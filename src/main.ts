@@ -4,7 +4,8 @@ import type { Newsletter } from './state/state';
 import { renderAll } from './render/render';
 import { Editor } from './edit/edit';
 import { bindPanelResize } from './edit/panel';
-import { getNewsletter, saveNewsletter, logout } from './api/api';
+import { getAppSettings, getNewsletter, saveNewsletter, logout } from './api/api';
+import type { AppSettings } from './state/state';
 import { exportJSON, importJSON } from './api/importExport';
 import { openEmailPreview } from './edit/emailPreview';
 import { openHelp } from './edit/help';
@@ -41,10 +42,28 @@ if (toolbarEl) {
   syncToolbarHeight();
 }
 
+function applyAppSettings(settings: AppSettings): void {
+  const brandLogo = document.querySelector<HTMLImageElement>('.brand-logo img');
+  const brandTitle = document.querySelector<HTMLHeadingElement>('.brand-txt h1');
+  if (brandLogo) brandLogo.src = settings.logoUrl;
+  if (brandTitle) brandTitle.textContent = settings.appTitle;
+}
+
 async function boot(): Promise<void> {
   saveIndicator.textContent = 'Chargement…';
   saveIndicator.dataset.state = 'saving';
-  const state = await getNewsletter();
+  // getAppSettings() ne doit jamais empêcher l'éditeur de charger : le logo/
+  // titre du chrome est une commodité d'affichage, pas une donnée dont dépend
+  // la newsletter elle-même (voir index.html, qui garde déjà un logo/titre
+  // par défaut codés en dur comme repli avant hydratation).
+  const [state, settingsResult] = await Promise.all([
+    getNewsletter(),
+    getAppSettings().catch((err) => {
+      console.error(err);
+      return null;
+    }),
+  ]);
+  if (settingsResult) applyAppSettings(settingsResult);
   root.dataset.newsletterId = state.id;
   renderAll(root, state);
   saveIndicator.textContent = 'Chargé';
@@ -96,6 +115,10 @@ document.getElementById('btnReset')?.addEventListener('click', async () => {
   if (!confirm('Réinitialiser tout le contenu ? Cette action est irréversible.')) return;
   const state = await getNewsletter();
   loadInto(state);
+});
+
+document.getElementById('btnConfigLink')?.addEventListener('click', () => {
+  window.location.href = '/config/';
 });
 
 document.getElementById('btnLogout')?.addEventListener('click', async () => {

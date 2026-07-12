@@ -281,6 +281,7 @@ export class EditPanel {
       return this.selection.el.querySelector<HTMLImageElement>('.art-img')?.src ?? null;
     }
     if (action === 'mast') return this.root.querySelector<HTMLImageElement>('.mast-right img')?.src ?? null;
+    if (action === 'footerLogo') return this.root.querySelector<HTMLImageElement>('.foot-logo img')?.src ?? null;
     if (action === 'edito') return this.root.querySelector<HTMLImageElement>('.edito-sun img')?.src ?? null;
     if (action === 'summer') return this.root.querySelector<HTMLImageElement>('.box-summer .sun-mini')?.src ?? null;
     return null;

@@ -165,6 +165,7 @@ export function renderMast(collapsed: Set<string>): string {
     section(collapsed, 'mast:titleRest', 'Titre — suite', ICONS.type, textField('', 'titleRest')) +
     section(collapsed, 'mast:period', 'Période', ICONS.type, textField('', 'period')) +
     section(collapsed, 'mast:image', 'Image', ICONS.image, imageField('', 'mast', false)) +
+    section(collapsed, 'mast:footerLogo', 'Logo (pied de page)', ICONS.image, imageField('', 'footerLogo', false)) +
     `</div>`
   );
 }

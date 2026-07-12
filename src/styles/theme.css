@@ -1,0 +1,47 @@
+/* ==========================================================================
+   PALETTES DU CHROME + MODE SOMBRE — partagés entre src/styles/style.css
+   (éditeur principal) et config/style.css (page de configuration), pour que
+   les deux surfaces rendent des couleurs identiques sous un même data-theme/
+   data-color-scheme. Portent UNIQUEMENT sur --accent (et dérivés) et
+   l'échelle de gris neutres (--g0..g9) du chrome — ne redéfinissent JAMAIS
+   --orange/--navy/--cream/--peach/--lav/--ink/--muted/--line (identité
+   visuelle CFDT figée de la feuille imprimée, voir commentaire
+   "NE PAS CHANGER" dans style.css). Chaque fichier hôte doit définir ses
+   propres valeurs par défaut (thème "orange" / mode clair) dans son :root ;
+   ce fichier ne fournit que les surcharges par attribut.
+
+   Thème choisi stocké en localStorage (clé "cfdt-editor-theme"), appliqué
+   via data-theme sur <html>. Mode sombre stocké (clé
+   "cfdt-editor-color-scheme"), appliqué via data-color-scheme sur <html>.
+   ========================================================================== */
+:root[data-theme="blue"] {
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-ring: rgba(37, 99, 235, 0.35);
+}
+:root[data-theme="green"] {
+  --accent: #15803d;
+  --accent-hover: #106830;
+  --accent-soft: rgba(21, 128, 61, 0.1);
+  --accent-ring: rgba(21, 128, 61, 0.35);
+}
+:root[data-theme="violet"] {
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-soft: rgba(124, 58, 237, 0.1);
+  --accent-ring: rgba(124, 58, 237, 0.35);
+}
+
+:root[data-color-scheme="dark"] {
+  --g0: #232320;
+  --g1: #1a1a18;
+  --g2: #2b2b27;
+  --g3: #34342f;
+  --g4: #3d3d37;
+  --g5: #4a4a43;
+  --g6: #6b6a62;
+  --g7: #9a9890;
+  --g8: #c2c0b8;
+  --g9: #eceae5;
+}

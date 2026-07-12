@@ -1,4 +1,4 @@
-import type { Article, ArticleVersion, BlobImage, Newsletter } from '../state/state';
+import type { AppSettings, Article, ArticleVersion, BlobImage, Newsletter } from '../state/state';
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, {
@@ -76,6 +76,17 @@ export async function uploadImage(blob: Blob, filename: string): Promise<string>
   if (!res.ok) throw new Error(`upload-image → ${res.status}`);
   const data = (await res.json()) as { url: string };
   return data.url;
+}
+
+export function getAppSettings(): Promise<AppSettings> {
+  return request<AppSettings>('/api/settings');
+}
+
+export function saveAppSettings(settings: AppSettings): Promise<AppSettings> {
+  return request<AppSettings>('/api/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  });
 }
 
 export async function login(password: string): Promise<void> {

@@ -4,6 +4,7 @@ export interface MastData {
   titleRest: string;
   period: string;
   image: string;
+  footerLogoUrl: string;
 }
 
 export interface EditoData {
@@ -92,4 +93,20 @@ export function newsletterRowToDTO(row: NewsletterRow, articles: ArticleRow[]): 
     infoBox: row.info_box,
     summerBox: row.summer_box,
   };
+}
+
+export interface AppSettingsRow {
+  id: boolean;
+  logo_url: string;
+  app_title: string;
+  updated_at: string;
+}
+
+export interface AppSettingsDTO {
+  logoUrl: string;
+  appTitle: string;
+}
+
+export function appSettingsRowToDTO(row: AppSettingsRow): AppSettingsDTO {
+  return { logoUrl: row.logo_url, appTitle: row.app_title };
 }

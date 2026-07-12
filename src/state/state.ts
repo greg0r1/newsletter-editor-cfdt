@@ -4,6 +4,7 @@ export interface Mast {
   titleRest: string;
   period: string;
   image: string;
+  footerLogoUrl: string;
 }
 
 export interface Edito {
@@ -55,4 +56,9 @@ export interface BlobImage {
   url: string;
   uploadedAt: string;
   size: number;
+}
+
+export interface AppSettings {
+  logoUrl: string;
+  appTitle: string;
 }

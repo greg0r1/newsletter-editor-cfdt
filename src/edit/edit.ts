@@ -6,7 +6,7 @@ import { EditPanel, type Selection } from './panel';
 
 const SAVE_DELAY_MS = 700;
 
-export type ImageTarget = 'article' | 'mast' | 'edito' | 'summer';
+export type ImageTarget = 'article' | 'mast' | 'footerLogo' | 'edito' | 'summer';
 
 export class Editor {
   private root: HTMLElement;
@@ -113,6 +113,7 @@ export class Editor {
     });
 
     const mastImg = this.root.querySelector<HTMLImageElement>('.mast-right img');
+    const footerLogoImg = this.root.querySelector<HTMLImageElement>('.foot-logo img');
     const editoImg = this.root.querySelector<HTMLImageElement>('.edito-sun img');
     const summerImg = this.root.querySelector<HTMLImageElement>('.box-summer .sun-mini');
 
@@ -124,6 +125,7 @@ export class Editor {
         titleRest: this.text('[data-field="titleRest"]'),
         period: this.text('[data-field="period"]'),
         image: mastImg?.getAttribute('src') ?? '',
+        footerLogoUrl: footerLogoImg?.getAttribute('src') ?? '',
       },
       edito: {
         hello: this.text('[data-field="editoHello"]'),
@@ -298,6 +300,9 @@ export class Editor {
       }
     } else if (target.kind === 'mast') {
       const img = this.root.querySelector<HTMLImageElement>('.mast-right img');
+      if (img) this.replaceImageSrc(img, url);
+    } else if (target.kind === 'footerLogo') {
+      const img = this.root.querySelector<HTMLImageElement>('.foot-logo img');
       if (img) this.replaceImageSrc(img, url);
     } else if (target.kind === 'edito') {
       const img = this.root.querySelector<HTMLImageElement>('.edito-sun img');

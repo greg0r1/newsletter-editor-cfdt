@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Configuration — ACTU UD CFDT 06</title>
+<script src="/theme-boot.js"></script>
+<link rel="stylesheet" href="/config/style.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="side-back" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      Retour à l'éditeur
+    </a>
+    <div class="side-title">Configuration</div>
+    <nav class="side-nav" id="sideNav">
+      <button type="button" class="side-item active" data-panel="general">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Général
+      </button>
+      <button type="button" class="side-item" data-panel="appearance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 22a10 10 0 1 1 0-20 5 5 0 0 1 5 5v.5A2.5 2.5 0 0 1 14.5 10H14a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h3a4 4 0 0 1 4 4c0 2.76-4.03 5-9 5Z"/></svg>
+        Apparence
+      </button>
+      <button type="button" class="side-item" data-panel="archives">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        Archives
+      </button>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <section class="panel active" data-panel-content="general">
+      <header class="panel-head">
+        <h1>Général</h1>
+        <p>Identité affichée dans la barre d'outils de l'éditeur.</p>
+      </header>
+
+      <form id="settingsForm" class="panel-body">
+        <div class="field-row">
+          <div class="field-col">
+            <label class="field-label">Logo de l'application</label>
+            <span class="field-hint">PNG, JPEG ou WebP, 8 Mo max.</span>
+          </div>
+          <div class="field-control logo-control">
+            <div class="logo-preview loading" id="logoPreviewWrap">
+              <span class="logo-spinner" aria-hidden="true"></span>
+              <img id="logoPreview" alt="Logo" hidden />
+            </div>
+            <button type="button" class="btn" id="btnChangeLogo">Changer</button>
+            <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" hidden />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-col">
+            <label class="field-label" for="appTitleInput">Titre de l'application</label>
+            <span class="field-hint">Affiché à côté du logo dans la barre d'outils.</span>
+          </div>
+          <div class="field-control">
+            <input type="text" id="appTitleInput" class="input" maxlength="200" required />
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <span class="status" id="settingsStatus"></span>
+          <button type="submit" class="btn primary">Enregistrer</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" data-panel-content="appearance">
+      <header class="panel-head">
+        <h1>Apparence</h1>
+        <p>Réglages d'affichage de l'outil, propres à cet appareil.</p>
+      </header>
+
+      <div class="panel-body">
+        <div class="field-row">
+          <div class="field-col">
+            <label class="field-label">Thème de couleurs</label>
+            <span class="field-hint">Couleur d'accent des boutons et de la sélection.</span>
+          </div>
+          <div class="field-control">
+            <div class="theme-swatches" id="themeSwatches">
+              <button type="button" class="theme-swatch" data-theme-id="orange" style="--sw: #e84e10" title="Orange"></button>
+              <button type="button" class="theme-swatch" data-theme-id="blue" style="--sw: #2563eb" title="Bleu"></button>
+              <button type="button" class="theme-swatch" data-theme-id="green" style="--sw: #15803d" title="Vert"></button>
+              <button type="button" class="theme-swatch" data-theme-id="violet" style="--sw: #7c3aed" title="Violet"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-col">
+            <label class="field-label">Apparence</label>
+            <span class="field-hint">La feuille de newsletter imprimée n'est jamais affectée.</span>
+          </div>
+          <div class="field-control">
+            <div class="scheme-toggle" id="schemeToggle">
+              <button type="button" class="scheme-btn" data-scheme="light">Clair</button>
+              <button type="button" class="scheme-btn" data-scheme="dark">Sombre</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel-content="archives">
+      <header class="panel-head">
+        <h1>Archives</h1>
+        <p>Historique des éditions passées de la newsletter.</p>
+      </header>
+
+      <div class="panel-body">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+          <p>Bientôt disponible</p>
+          <span>La liste des éditions précédentes de la newsletter apparaîtra ici.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script type="module" src="/config/main.ts"></script>
+</body>
+</html>

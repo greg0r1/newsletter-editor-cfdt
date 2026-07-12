@@ -23,7 +23,14 @@ interface PrototypeArticle {
 }
 
 interface PrototypeState {
-  mast: { orgLines: string; titleAccent: string; titleRest: string; period: string; image: string };
+  mast: {
+    orgLines: string;
+    titleAccent: string;
+    titleRest: string;
+    period: string;
+    image: string;
+    footerLogoUrl?: string;
+  };
   edito: { hello: string; body: string; signature: string; image: string };
   articles: PrototypeArticle[];
   infoBox: { title: string; body: string };
@@ -80,7 +87,7 @@ async function main(): Promise<void> {
   const { data: newsletterRow, error: newsletterError } = await supabase
     .from('newsletters')
     .insert({
-      mast: { ...state.mast, image: mastImage },
+      mast: { ...state.mast, image: mastImage, footerLogoUrl: state.mast.footerLogoUrl ?? '/cfdt-logo-footer.svg' },
       edito: { ...state.edito, image: editoImage },
       info_box: state.infoBox,
       summer_box: { ...state.summerBox, image: summerImage },

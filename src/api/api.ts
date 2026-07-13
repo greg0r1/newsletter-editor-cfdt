@@ -78,6 +78,11 @@ export async function uploadImage(blob: Blob, filename: string): Promise<string>
   return data.url;
 }
 
+export async function deleteImage(url: string): Promise<void> {
+  const res = await fetch(`/api/images?url=${encodeURIComponent(url)}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`images DELETE → ${res.status}`);
+}
+
 export function getAppSettings(): Promise<AppSettings> {
   return request<AppSettings>('/api/settings');
 }

@@ -7,10 +7,10 @@ function requireAuth(request: Request): boolean {
   return verifySessionCookieValue(cookies[AUTH_COOKIE_NAME]);
 }
 
-// Le front (src/edit/image.ts) compresse toujours en JPEG avant upload ; on
-// reste néanmoins un peu plus large pour ne pas casser un import manuel via
-// l'API. Exclut explicitement SVG (peut embarquer du <script>/JS inline) et
-// tout type non-image.
+// Le front (src/edit/image.ts) compresse en JPEG, ou en PNG si l'image source
+// a de la transparence (visuels détourés) ; on reste un peu plus large pour ne
+// pas casser un import manuel via l'API. Exclut explicitement SVG (peut
+// embarquer du <script>/JS inline) et tout type non-image.
 const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',

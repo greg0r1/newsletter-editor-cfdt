@@ -1,4 +1,4 @@
-import { list } from '@vercel/blob';
+import { del, list } from '@vercel/blob';
 import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth.js';
 import { serverErrorResponse } from './_lib/errors.js';
 
@@ -29,6 +29,30 @@ export async function GET(request: Request): Promise<Response> {
       .sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt));
 
     return Response.json(images);
+  } catch (err) {
+    console.error(err);
+    return serverErrorResponse();
+  }
+}
+
+// Suppression volontairement sans vérification d'usage dans la newsletter
+// courante (outil interne à usage restreint) : si l'image supprimée est
+// encore référencée quelque part, elle s'affichera cassée — à l'utilisateur
+// de vérifier avant de confirmer (voir confirm() côté front).
+export async function DELETE(request: Request): Promise<Response> {
+  if (!requireAuth(request)) return new Response('Unauthorized', { status: 401 });
+
+  try {
+    const url = new URL(request.url).searchParams.get('url');
+    if (!url || !url.startsWith('https://')) {
+      return Response.json({ error: 'Paramètre url manquant ou invalide' }, { status: 400 });
+    }
+
+    // `del()` valide elle-même que l'URL appartient au store Blob du projet
+    // (elle lève sinon) : pas de vérification de domaine supplémentaire ici.
+    await del(url);
+
+    return new Response(null, { status: 204 });
   } catch (err) {
     console.error(err);
     return serverErrorResponse();

@@ -1,5 +1,5 @@
 import type { BlobImage } from '../state/state';
-import { listImages, uploadImage } from '../api/api';
+import { deleteImage, listImages, uploadImage } from '../api/api';
 import { compressImage } from './image';
 import { registerModal, closeOtherModals } from './modal';
 
@@ -48,9 +48,15 @@ function renderGrid(images: BlobImage[]): void {
   grid.innerHTML = images
     .map(
       (img) =>
+        `<div class="image-picker-thumb-wrap">` +
         `<button type="button" class="image-picker-thumb" data-url="${img.url}" ` +
         `aria-label="Utiliser cette image" title="${formatSize(img.size)}">` +
-        `<img src="${img.url}" alt="" loading="lazy"></button>`,
+        `<img src="${img.url}" alt="" loading="lazy"></button>` +
+        `<button type="button" class="image-picker-thumb-delete" data-delete-url="${img.url}" ` +
+        `aria-label="Supprimer cette image" title="Supprimer">` +
+        icon('<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>') +
+        `</button>` +
+        `</div>`,
     )
     .join('');
 }
@@ -81,15 +87,16 @@ async function handleUpload(file: File): Promise<void> {
   const startedAt = generation;
   try {
     const compressed = await compressImage(file, 560, 0.82);
-    const url = await uploadImage(compressed, file.name);
+    await uploadImage(compressed, file.name);
     // Si la modale a été fermée puis rouverte pour une autre cible pendant
     // l'upload, `generation` a changé : ce résultat n'a plus de destinataire
-    // valide (onSelect appartient désormais à une autre session) — on ne
-    // l'applique pas, silencieusement, l'image reste disponible dans la
-    // galerie pour un prochain choix manuel.
+    // valide — on ne touche pas à la galerie d'une autre session, l'image
+    // reste de toute façon disponible sur Vercel Blob pour un prochain choix.
+    // L'import n'applique plus l'image ni ne ferme la modale : il ajoute
+    // seulement l'image à la galerie, l'utilisateur clique dessus ensuite
+    // pour la sélectionner — étape volontairement séparée du choix.
     if (generation === startedAt) {
-      onSelect?.(url);
-      close();
+      await loadGallery();
     }
   } catch (err) {
     console.error(err);
@@ -97,6 +104,25 @@ async function handleUpload(file: File): Promise<void> {
   } finally {
     uploading = false;
     dropzone?.classList.remove('busy');
+  }
+}
+
+async function handleDelete(url: string): Promise<void> {
+  if (!confirm("Supprimer définitivement cette image ? Si elle est utilisée ailleurs dans la newsletter, elle apparaîtra cassée.")) {
+    return;
+  }
+  const thumb = grid?.querySelector<HTMLElement>(`[data-delete-url="${CSS.escape(url)}"]`)?.closest('.image-picker-thumb-wrap');
+  thumb?.classList.add('deleting');
+  try {
+    await deleteImage(url);
+    thumb?.remove();
+    if (grid && grid.children.length === 0) {
+      grid.innerHTML = `<p class="image-picker-empty">Aucune image importée pour l'instant — importez-en une ci-dessus.</p>`;
+    }
+  } catch (err) {
+    console.error(err);
+    thumb?.classList.remove('deleting');
+    setUploadError('Suppression impossible : réessayez.');
   }
 }
 
@@ -115,9 +141,15 @@ function build(): void {
     `</header>` +
     `<div class="image-picker-body">` +
     `<div class="image-picker-dropzone">` +
+    `<div class="image-picker-dropzone-idle">` +
     icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>') +
     `<span>Glissez une image ici, ou</span>` +
     `<button type="button" class="tbtn" id="imagePickerChoose">Choisir un fichier</button>` +
+    `</div>` +
+    `<div class="image-picker-dropzone-loading">` +
+    `<span class="image-picker-spinner" aria-hidden="true"></span>` +
+    `<span>Import en cours…</span>` +
+    `</div>` +
     `<p class="image-picker-upload-error" hidden></p>` +
     `</div>` +
     `<div class="image-picker-grid"></div>` +
@@ -146,6 +178,11 @@ function build(): void {
     const target = e.target as HTMLElement;
     if (target.closest('[data-close]')) {
       close();
+      return;
+    }
+    const deleteBtn = target.closest<HTMLElement>('.image-picker-thumb-delete');
+    if (deleteBtn?.dataset.deleteUrl) {
+      void handleDelete(deleteBtn.dataset.deleteUrl);
       return;
     }
     const thumb = target.closest<HTMLElement>('.image-picker-thumb');

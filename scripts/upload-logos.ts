@@ -32,6 +32,7 @@ async function main(): Promise<void> {
   console.log('Upload des logos vers Vercel Blob…');
   await uploadLogo('cfdt-logo.png', 'logos/cfdt-logo.png');
   await uploadLogo('cfdt-logo-footer.png', 'logos/cfdt-logo-footer.png');
+  await uploadLogo('mast-megaphone.png', 'logos/mast-megaphone.png');
   console.log('Terminé. Copiez les URLs ci-dessus dans src/api/exportEmail.ts.');
 }
 

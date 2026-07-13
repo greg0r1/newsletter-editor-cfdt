@@ -1,12 +1,5 @@
 /* Règles validées empiriquement — voir CLAUDE.md avant toute modification */
 
-.articles {
-  column-count: 3;
-  column-gap: 16px;
-  column-fill: auto;
-  padding: 0 10mm;
-}
-
 .tail {
   break-inside: avoid;
 }
@@ -33,8 +26,19 @@
   }
   .selectable {
     outline: none !important;
-    background: none !important;
     cursor: auto !important;
+  }
+  .selectable.selected {
+    background: none !important;
+  }
+  .art-img {
+    max-height: 85mm;
+  }
+  .articles {
+    display: block;
+  }
+  .art-half {
+    grid-column: unset;
   }
   .edit-panel {
     display: none !important;

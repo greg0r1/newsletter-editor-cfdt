@@ -131,21 +131,46 @@ métier) : séparer par responsabilité DDD plutôt que par couche technique pur
 
 ## Règles CSS d'impression (validées empiriquement, ne pas changer sans tester)
 - `@page { size: A4; margin: 0; }` — les marges visuelles viennent des paddings
-  internes (`10mm` de chaque côté), pas de la marge de page. Si un jour la
-  marge `@page` n'est plus à 0, tout le calcul de largeur de colonnes change.
-- `.articles { column-count: 3; column-gap: 16px; column-fill: auto; }` — c'est
-  ce qui permet à Chromium de répartir les articles en 3 colonnes façon presse
-  ET de fragmenter automatiquement sur plusieurs pages A4 à l'impression. Testé
-  et validé avec du contenu de longueur variable (aucun article coupé).
-- Chaque article a `break-inside: avoid` (jamais coupé entre deux colonnes/pages).
+  internes (`10mm` de chaque côté, définis dans `style.css`, appliqués aussi
+  bien à l'écran qu'à l'impression), pas de la marge de page.
+- `.articles` est en CSS Grid à l'écran (`display: grid; grid-template-columns:
+  1fr 1fr`, voir section Front/CSS d'impression), pour permettre aux articles
+  `layout: 'half'` de s'afficher côte à côte. À l'**impression**, `print.css`
+  force `.articles { display: block }` (et `.art-half { grid-column: unset }`) :
+  chaque article s'empile en une seule colonne pleine largeur, quel que soit
+  son `layout`. Décision explicite (revenue en arrière sur un essai de rendu
+  presse 3 colonnes façon `column-count: 3` : ça cassait car `.articles` garde
+  `display: grid` de `style.css`, et `column-count` n'a aucun effet sur un
+  élément en `display: grid` — Chromium ignorait silencieusement les colonnes).
+  Si un mode presse multi-colonnes est retenté un jour, il faudra explicitement
+  annuler `display: grid` (ex: `display: block`) en plus de poser `column-count`.
+- Chaque article a `break-inside: avoid` (jamais coupé entre deux pages),
+  valable indépendamment du mode colonne/bloc.
 - Le bloc final (`Informations pratiques` + encart de clôture + pied de page)
   est enveloppé dans un conteneur unique avec `break-inside: avoid`, placé
   **après** le conteneur `.articles` dans le DOM. Résultat : il est toujours
   poussé sur une nouvelle page s'il ne tient pas dans l'espace restant, jamais
-  scindé, toujours à la toute fin. Ne jamais le mettre à l'intérieur du
-  conteneur `.articles` (ça casserait la fragmentation en colonnes).
+  scindé, toujours à la toute fin.
 - Le nombre de pages n'est PAS fixé : il dépend du volume de contenu. C'est
   voulu, ne pas essayer de forcer un nombre de pages précis.
+- `.art-img` est plafonnée à `max-height: 85mm` à l'impression (via `print.css`)
+  pour éviter qu'une image haute ne pousse un article entier sur sa propre page
+  à cause de `break-inside: avoid` (recadrage via `object-fit: cover`, déjà en
+  place à l'écran).
+- Les media queries responsive du chrome de l'éditeur dans `style.css`
+  (`@media screen and (max-width: 1150px)` / `760px`, toolbar + edit-panel +
+  mise en page mobile) sont explicitement scopées à `screen`. Piège rencontré :
+  sans `screen`, elles se déclenchaient aussi à l'impression pour certaines
+  largeurs de page, cassant la grille de `.edito` (image empilée au-dessus du
+  texte au lieu d'à côté) — toujours scoper à `screen` toute media query pensée
+  pour le confort d'affichage du chrome, jamais pour le contenu imprimé.
+- `.selectable` (affordance de clic dans l'éditeur, portée par `.edito`, `.art`,
+  `.mast`, `.box-info`, `.box-summer` — donc les mêmes éléments qui ont un fond
+  de carte coloré) doit voir son `outline`/`cursor` neutralisés à l'impression,
+  mais **pas** son `background` global : seul l'état `.selectable.selected`
+  (surbrillance bleutée de sélection) doit perdre son fond en print. Piège
+  rencontré : `.selectable { background: none !important }` en print.css
+  effaçait aussi le fond pêche/orange légitime des cartes.
 
 ## Thème de couleurs et mode sombre (chrome de l'application uniquement)
 - Portent **uniquement** sur les variables du chrome de l'éditeur (`--accent`,

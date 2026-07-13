@@ -2,7 +2,7 @@ import { supabase } from './_lib/supabase.js';
 import { parseCookies, verifySessionCookieValue, AUTH_COOKIE_NAME } from './_lib/auth.js';
 import { sanitizeHtml } from './_lib/sanitize.js';
 import { serverErrorResponse } from './_lib/errors.js';
-import { articleRowToDTO, type ArticleRow, type ArticleVersionRow } from './_lib/types.js';
+import { articleRowToDTO, normalizeLayout, type ArticleRow, type ArticleVersionRow } from './_lib/types.js';
 import { isRestoreArticleVersionBody } from './_lib/validate.js';
 
 function requireAuth(request: Request): boolean {
@@ -72,6 +72,7 @@ export async function POST(request: Request): Promise<Response> {
         image_url: snapshot.imageUrl,
         body: sanitizeHtml(snapshot.body),
         highlight: snapshot.highlight != null ? sanitizeHtml(snapshot.highlight) : null,
+        layout: normalizeLayout(snapshot.layout),
         updated_at: new Date().toISOString(),
       })
       .eq('id', body.articleId)

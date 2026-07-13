@@ -20,6 +20,7 @@ create table if not exists articles (
   image_url text,
   body text not null,
   highlight text,
+  layout text not null default 'full',
   updated_at timestamptz not null default now()
 );
 create index if not exists articles_newsletter_id_position_idx on articles(newsletter_id, position);
@@ -62,3 +63,19 @@ alter table app_settings enable row level security;
 -- champ `footerLogoUrl` à `mast` — sans ce backfill, `mast.footerLogoUrl`
 -- serait absent du JSONB et le pied de page afficherait une image cassée.
 -- update newsletters set mast = mast || jsonb_build_object('footerLogoUrl', '/cfdt-logo-footer.svg') where not (mast ? 'footerLogoUrl');
+
+-- Migration : ajout de `layout` (disposition pleine/demi-largeur d'un
+-- article) sur une table `articles` déjà existante en production.
+-- alter table articles add column if not exists layout text not null default 'full';
+
+-- Backfill : fusion de `mast.titleAccent`/`mast.titleRest` (deux champs
+-- texte, l'accent coloré séparément) en un seul `mast.title`, plus ajout de
+-- `mast.titleMode` ('text'|'image') et `mast.titleImageUrl` (le titre peut
+-- désormais être une image importée à la place d'un texte). Sans ce
+-- backfill, une ligne `newsletters` créée avant ce changement afficherait un
+-- titre vide (title absent du JSONB).
+-- update newsletters set mast = (mast - 'titleAccent' - 'titleRest') || jsonb_build_object(
+--   'title', concat_ws(' ', mast->>'titleAccent', mast->>'titleRest'),
+--   'titleMode', 'text',
+--   'titleImageUrl', null
+-- ) where not (mast ? 'title');

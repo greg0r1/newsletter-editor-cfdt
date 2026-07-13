@@ -8,7 +8,6 @@ import { FORMAT_BUTTONS, ICONS, TEXT_COLORS } from './icons';
  */
 export const HTML_FIELDS = new Set([
   'title',
-  'mastOrg',
   'body',
   'editoBody',
   'infoBody',
@@ -141,6 +140,10 @@ export function renderArticle(collapsed: Set<string>, el: HTMLElement): string {
     `<button type="button" class="tbtn" data-panel="toggleHighlight">${hasHighlight ? `${ICONS.minus} Retirer l’encart` : `${ICONS.plus} Ajouter un encart`}</button>` +
     (hasHighlight ? `<div class="pf-highlight-field">${richField('Texte de l’encart', 'highlight')}</div>` : '');
 
+  const isHalf = el.dataset.layout === 'half';
+  const layoutBody =
+    `<button type="button" class="tbtn" data-panel="toggleLayout">${isHalf ? 'Passer en pleine largeur' : 'Passer en demi-largeur'}</button>`;
+
   return (
     header(`Article ${index + 1}`) +
     `<div class="pf-body">` +
@@ -149,20 +152,28 @@ export function renderArticle(collapsed: Set<string>, el: HTMLElement): string {
     section(collapsed, 'article:image', hasImage ? 'Image' : 'Image (aucune)', ICONS.image, imageField('', 'article', hasImage)) +
     section(collapsed, 'article:body', 'Texte de l’article', ICONS.text, richField('', 'body')) +
     section(collapsed, 'article:highlight', 'Encart mis en avant', ICONS.star, highlightBody) +
+    section(collapsed, 'article:layout', isHalf ? 'Disposition (demi-largeur)' : 'Disposition (pleine largeur)', ICONS.move, layoutBody) +
     section(collapsed, 'article:position', 'Position dans la liste', ICONS.move, positionBody) +
     section(collapsed, 'article:delete', 'Supprimer', ICONS.trash, `<button type="button" class="tbtn danger pf-block" data-panel="delete">${ICONS.trash} Supprimer cet article</button>`) +
     `</div>`
   );
 }
 
-export function renderMast(collapsed: Set<string>): string {
+export function renderMast(collapsed: Set<string>, root: HTMLElement): string {
+  const titleEl = root.querySelector<HTMLElement>('.mast-title');
+  const isImageTitle = titleEl?.dataset.titleMode === 'image';
+
+  const titleBody =
+    `<button type="button" class="tbtn" data-panel="toggleTitleMode">${isImageTitle ? 'Passer en texte' : 'Passer en image'}</button>` +
+    (isImageTitle
+      ? `<div class="pf-title-image-field">${imageField('', 'titleImage', false)}</div>`
+      : `<div class="pf-title-text-field">${textField('', 'mastTitle')}</div>`);
+
   return (
     header('En-tête (bandeau)') +
     `<div class="pf-body">` +
     sectionsToolbar() +
-    section(collapsed, 'mast:org', 'Organisation', ICONS.type, textField('', 'mastOrg', false)) +
-    section(collapsed, 'mast:titleAccent', 'Titre — accent (orange)', ICONS.type, textField('', 'titleAccent')) +
-    section(collapsed, 'mast:titleRest', 'Titre — suite', ICONS.type, textField('', 'titleRest')) +
+    section(collapsed, 'mast:title', isImageTitle ? 'Titre (image)' : 'Titre (texte)', ICONS.type, titleBody) +
     section(collapsed, 'mast:period', 'Période', ICONS.type, textField('', 'period')) +
     section(collapsed, 'mast:image', 'Image', ICONS.image, imageField('', 'mast', false)) +
     section(collapsed, 'mast:footerLogo', 'Logo (pied de page)', ICONS.image, imageField('', 'footerLogo', false)) +

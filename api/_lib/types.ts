@@ -1,7 +1,7 @@
 export interface MastData {
-  orgLines: string;
-  titleAccent: string;
-  titleRest: string;
+  title: string;
+  titleMode: 'text' | 'image';
+  titleImageUrl: string | null;
   period: string;
   image: string;
   footerLogoUrl: string;
@@ -43,6 +43,7 @@ export interface ArticleRow {
   image_url: string | null;
   body: string;
   highlight: string | null;
+  layout: string;
   updated_at: string;
 }
 
@@ -60,6 +61,7 @@ export interface ArticleDTO {
   imageUrl: string | null;
   body: string;
   highlight: string | null;
+  layout: 'full' | 'half';
   updatedAt: string;
 }
 
@@ -72,6 +74,15 @@ export interface NewsletterDTO {
   summerBox: SummerBoxData;
 }
 
+// Coercion défensive : `layout` vient soit d'une colonne Postgres (ArticleRow,
+// typée `string`), soit d'un snapshot JSONB historique (ArticleVersionRow,
+// typé ArticleDTO côté TS mais dont la vraie forme au runtime n'est pas
+// garantie — colonne ajoutée après coup, absente des anciens snapshots).
+// Dans les deux cas, toute valeur autre que 'half' retombe sur 'full'.
+export function normalizeLayout(value: unknown): 'full' | 'half' {
+  return value === 'half' ? 'half' : 'full';
+}
+
 export function articleRowToDTO(row: ArticleRow): ArticleDTO {
   return {
     id: row.id,
@@ -80,6 +91,7 @@ export function articleRowToDTO(row: ArticleRow): ArticleDTO {
     imageUrl: row.image_url,
     body: row.body,
     highlight: row.highlight,
+    layout: normalizeLayout(row.layout),
     updatedAt: row.updated_at,
   };
 }

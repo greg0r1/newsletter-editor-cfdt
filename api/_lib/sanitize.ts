@@ -85,7 +85,7 @@ function sanitizeAttributes(tag: string, attrs: Map<string, string>): string {
 
 /**
  * Sanitize le HTML stocké pour un champ éditable (title, body, highlight,
- * mastOrg, editoBody, infoBody, summerBody). Appelé côté serveur juste avant
+ * editoBody, infoBody, summerBody). Appelé côté serveur juste avant
  * l'écriture en base : c'est la seule barrière fiable, le front ne doit pas
  * être la seule ligne de défense contre le XSS stocké.
  */

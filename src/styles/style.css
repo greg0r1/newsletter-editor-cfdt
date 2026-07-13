@@ -10,6 +10,10 @@
   --ink: #2f3640;
   --muted: #4a5666;
   --line: #e7ded3;
+  /* Teinte pêche/saumon soutenue du titre "cartoon" du masthead (police
+     Baloo 2), plus opaque que --peach pour rester lisible sur fond blanc.
+     Uniquement décorative, propre au bandeau. */
+  --mast-title: #e79273;
 
   /* ======================================================================
      CHROME DE L'ÉDITEUR — thème "outil pro" (esprit Linear / Notion).
@@ -22,24 +26,25 @@
     "Helvetica Neue", Arial, sans-serif;
   --sheet-font:
     "Trebuchet MS", "Segoe UI", Verdana, Helvetica, Arial, sans-serif;
+  --title-font: "Baloo 2", var(--sheet-font);
 
   /* Accent unique (action principale, sélection, focus). */
   --accent: #e84e10;
   --accent-hover: #d5450d;
-  --accent-soft: rgba(232, 78, 16, 0.1);   /* fond focus/sélection discret */
-  --accent-ring: rgba(232, 78, 16, 0.35);  /* anneau de focus */
+  --accent-soft: rgba(232, 78, 16, 0.1); /* fond focus/sélection discret */
+  --accent-ring: rgba(232, 78, 16, 0.35); /* anneau de focus */
 
   /* Échelle de gris neutres (0 = plus clair, 9 = plus sombre). */
   --g0: #ffffff;
-  --g1: #fbfbfa;   /* fond app (blanc cassé très légèrement chaud) */
-  --g2: #f6f6f5;   /* surface enfoncée / hover */
+  --g1: #fbfbfa; /* fond app (blanc cassé très légèrement chaud) */
+  --g2: #f6f6f5; /* surface enfoncée / hover */
   --g3: #efeeed;
-  --g4: #e6e5e3;   /* bordures fines */
-  --g5: #d9d8d5;   /* bordure plus marquée */
+  --g4: #e6e5e3; /* bordures fines */
+  --g5: #d9d8d5; /* bordure plus marquée */
   --g6: #b8b6b1;
-  --g7: #8a8880;   /* texte tertiaire */
-  --g8: #56544e;   /* texte secondaire */
-  --g9: #26251f;   /* texte principal (presque noir, chaud) */
+  --g7: #8a8880; /* texte tertiaire */
+  --g8: #56544e; /* texte secondaire */
+  --g9: #26251f; /* texte principal (presque noir, chaud) */
 
   /* Rôles dérivés (pour lisibilité du reste de la feuille de style). */
   --app-bg: var(--g1);
@@ -52,8 +57,21 @@
 
   /* Une seule ombre, ultra discrète, réservée aux overlays (menus/modale). */
   --shadow-sm: 0 1px 2px rgba(20, 20, 18, 0.05);
-  --shadow-pop: 0 4px 12px -2px rgba(20, 20, 18, 0.1),
-                0 12px 28px -8px rgba(20, 20, 18, 0.14);
+  --shadow-pop:
+    0 4px 12px -2px rgba(20, 20, 18, 0.1),
+    0 12px 28px -8px rgba(20, 20, 18, 0.14);
+}
+
+/* Police du titre du masthead (auto-hébergée : CSP `default-src 'self'`
+   n'autorise pas fonts.googleapis.com/fonts.gstatic.com — voir vercel.json).
+   Un seul poids (800) et le sous-ensemble latin suffisent, le titre n'utilise
+   que ces caractères. */
+@font-face {
+  font-family: "Baloo 2";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/baloo2-800.woff2") format("woff2");
 }
 
 /* Palettes de thème + mode sombre du chrome : voir src/styles/theme.css
@@ -166,7 +184,10 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s,
+    color 0.1s;
 }
 .tbtn svg {
   flex: 0 0 auto;
@@ -263,7 +284,9 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .tmenu-item svg {
   flex: 0 0 auto;
@@ -355,8 +378,9 @@ body {
   background: #fff;
   font-family: var(--sheet-font);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 3px rgba(20, 20, 18, 0.06),
-              0 12px 32px -12px rgba(20, 20, 18, 0.16);
+  box-shadow:
+    0 1px 3px rgba(20, 20, 18, 0.06),
+    0 12px 32px -12px rgba(20, 20, 18, 0.16);
   position: relative;
 }
 
@@ -366,7 +390,9 @@ body {
   outline: 1.5px solid transparent;
   outline-offset: 2px;
   border-radius: 4px;
-  transition: outline-color 0.1s, background 0.1s;
+  transition:
+    outline-color 0.1s,
+    background 0.1s;
 }
 .selectable:hover {
   outline-color: var(--g5);
@@ -379,104 +405,147 @@ body {
   position: relative;
 }
 
-/* ---------- MASTHEAD ---------- */
+/* ---------- MASTHEAD ----------
+   Deux lignes flexbox indépendantes empilées (`.mast` en colonne) :
+   `.mast-row-top` (logo puis titre) et `.mast-row-bottom` (soleil puis
+   pilule/mégaphone). Chaque ligne centre son propre contenu horizontalement
+   et gère son alignement vertical via `align-items: center`, quelle que
+   soit la hauteur relative des deux éléments qui la composent. */
 .mast {
   position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  padding: 7mm 10mm 4mm;
+  display: flex;
+  flex-direction: column;
+  row-gap: 14px;
+  width: 100%;
+  padding: 10mm 10mm 5mm;
   overflow: hidden;
 }
-.mast::before {
-  content: "";
-  position: absolute;
-  top: -72px;
-  left: -72px;
-  width: 150px;
-  height: 150px;
-  border-radius: 40px;
-  background: var(--orange);
-  transform: rotate(8deg);
-  opacity: 0.12;
-}
-.mast-left {
+.mast-row {
   display: flex;
   align-items: center;
-  gap: 11px;
+  column-gap: 14px;
   position: relative;
   z-index: 2;
+}
+.mast-row-top {
+  justify-content: center;
+}
+.mast-row-bottom {
+  justify-content: center;
+}
+.mast-row-top .cfdt-logo-wrap {
+  position: absolute;
+  left: 0;
+}
+.mast-row-top .mast-title {
+  width: 100%;
 }
 .cfdt-logo-wrap {
-  background: #fff;
+  width: 118px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
+  overflow: hidden;
 }
 .cfdt-logo {
-  height: 100px;
+  /* Le SVG source n'est pas carré (ratio ~0.78) : une hauteur fixe seule
+     donnerait un logo décentré/débordant dans le cercle. `max-width`/
+     `max-height` + `object-fit: contain` le contraint dans le cercle fixe
+     ci-dessus, quel que soit son ratio réel. */
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
   flex: 0 0 auto;
+  padding: 10px;
 }
-.mast-org {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: var(--navy);
-  line-height: 1.14;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  min-width: 90px;
+.mast-sun-wrap {
+  width: 118px;
 }
-.mast-center {
-  text-align: center;
-  position: relative;
-  z-index: 2;
-}
-.mast-title {
-  font-size: 35px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  line-height: 1;
-  color: var(--navy);
-}
-.mast-title .o {
-  color: var(--orange);
-}
-.mast-pill {
-  display: inline-block;
-  margin-top: 6px;
-  background: var(--navy);
-  color: #fff;
-  font-size: 12.5px;
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.4px;
-  padding: 4px 18px;
-  border-radius: 20px;
-  min-width: 40px;
-}
-.mast-right {
-  width: 132px;
-  position: relative;
-  z-index: 2;
-}
-.mast-right img {
-  width: 132px;
+.mast-sun {
+  width: 100px;
   height: auto;
   display: block;
-  margin-left: auto;
-  border-radius: 6px;
+}
+.mast-title {
+  font-family: var(--title-font);
+  font-size: 50px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 0.95;
+  color: var(--mast-title);
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+}
+.mast-title-img {
+  display: block;
+  max-width: 100%;
+  max-height: 118px;
+  width: auto;
+  height: auto;
+}
+.mast-pill-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mast-megaphone {
+  flex: 0 0 auto;
+  width: 76px;
+  height: auto;
+  display: block;
+  margin-right: -16px;
+  transform: rotate(-8deg);
+}
+.mast-sparkles {
+  position: absolute;
+  top: 0px;
+  right: -17px;
+  z-index: 3;
+  transform: rotate(45deg);
+}
+.mast-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--peach);
+  color: var(--orange);
+  border: 2px solid var(--orange);
+  font-size: 22px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.2px;
+  padding: 8px 26px;
+  border-radius: 30px;
+}
+
+/* ---------- CARTE COMMUNE (edito, articles, encarts) ----------
+   Composant visuel partagé : fond pêche/lavande, coins arrondis prononcés,
+   en-tête coloré avec emoji. Réutilisé par .edito, .art, .box-info,
+   .box-summer pour un rendu homogène en cartes empilées. */
+.card-emoji {
+  font-size: 20px;
+  line-height: 1;
+  flex: 0 0 auto;
 }
 
 /* ---------- EDITO ---------- */
 .edito {
   background: var(--peach);
-  border-radius: 13px;
-  margin: 0 10mm 3mm;
-  padding: 9px 18px;
+  border-radius: 18px;
+  margin: 0 10mm 12px;
+  padding: 14px 20px;
   display: grid;
   grid-template-columns: 104px 1fr;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
   break-inside: avoid;
   position: relative;
@@ -486,43 +555,74 @@ body {
   height: auto;
   display: block;
 }
+.edito-txt {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+}
+.edito-txt .card-emoji {
+  grid-row: 1;
+}
 .edito-txt p {
   margin-bottom: 4px;
-  font-size: 11.3px;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.32;
 }
 .edito-txt .hello {
   font-weight: 800;
   color: var(--orange);
-  font-size: 13.5px;
+  font-size: 1rem;
   margin-bottom: 6px;
   display: block;
 }
 .edito-txt .sign {
   font-weight: 800;
   color: var(--orange);
-  font-size: 14px;
+  font-size: 1rem;
   font-style: italic;
   margin-top: 1px;
   display: block;
+  grid-column: 1 / -1;
+}
+.edito-txt .edito-body {
+  grid-column: 1 / -1;
 }
 .edito-body p:last-child {
   margin-bottom: 0;
 }
 
-/* ---------- ARTICLES ---------- */
+/* ---------- ARTICLES ----------
+   `.articles` est en CSS Grid (2 colonnes) plutôt qu'en column-count : c'est
+   ce qui permet aux articles `layout: 'half'` de se placer naturellement
+   côte à côte (façon "Emploi dans le 06 / Job d'été" dans la maquette). En
+   contrepartie, la fragmentation à l'impression est moins optimale qu'avec
+   column-count (des espaces vides peuvent apparaître en bas de page avant un
+   saut de page) — accepté sciemment pour privilégier la fidélité visuelle à
+   la maquette. Revalider ce compromis si le rendu papier devient gênant. */
+.articles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 10mm;
+}
 .art {
+  grid-column: 1 / -1;
+  background: var(--peach);
+  border-radius: 18px;
+  padding: 25px;
   break-inside: avoid;
-  margin: 0 0 11px;
+  margin: 0 0 16px;
   position: relative;
-  padding-top: 2px;
+}
+.art-half {
+  grid-column: span 1;
 }
 .art-head {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  margin-bottom: 5px;
+  gap: 8px;
+  margin-bottom: 15px;
 }
 .num {
   flex: 0 0 auto;
@@ -532,29 +632,30 @@ body {
   background: var(--orange);
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(232, 78, 16, 0.4);
 }
 .art-head h3 {
-  color: var(--navy);
-  font-size: 14px;
+  color: var(--orange);
+  font-size: 1rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   padding-top: 1px;
   flex: 1;
 }
 .art-img {
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 12px;
+  object-fit: cover;
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 .art-body p {
-  font-size: 11px;
+  font-size: 1rem;
   color: var(--muted);
   margin-bottom: 4px;
   line-height: 1.36;
@@ -566,7 +667,7 @@ body {
   margin: 4px 0 6px 16px;
 }
 .art-body li {
-  font-size: 11.5px;
+  font-size: 1rem;
   color: var(--navy);
   font-weight: 700;
   margin-bottom: 4px;
@@ -577,7 +678,7 @@ body {
   border-radius: 9px;
   padding: 7px 11px;
   margin-top: 6px;
-  font-size: 11px;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.28;
 }
@@ -585,14 +686,14 @@ body {
 /* ---------- BOTTOM (info + summer) ---------- */
 .bottom {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 15px;
-  padding: 6px 10mm 4mm;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 6px 10mm 12px;
   break-inside: avoid;
 }
 .box {
-  border-radius: 13px;
-  padding: 12px 15px;
+  border-radius: 18px;
+  padding: 14px 20px;
   position: relative;
 }
 .box-info {
@@ -608,23 +709,15 @@ body {
   margin-bottom: 7px;
 }
 .box-head .bh-ic {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex: 0 0 auto;
-  color: #fff;
-  background: var(--navy);
 }
 .box-info h4 {
-  color: var(--navy);
-  font-size: 13px;
+  color: var(--orange);
+  font-size: 1rem;
   font-weight: 800;
 }
 .box p {
-  font-size: 11.5px;
+  font-size: 1rem;
   color: var(--muted);
   margin-bottom: 6px;
   line-height: 1.42;
@@ -640,7 +733,7 @@ body {
 }
 .box-summer h4 {
   color: var(--orange);
-  font-size: 18px;
+  font-size: 1rem;
   font-weight: 800;
   font-style: italic;
 }
@@ -648,7 +741,7 @@ body {
   color: var(--orange);
   font-weight: 800;
   font-style: italic;
-  font-size: 13px;
+  font-size: 1rem;
   margin-top: 2px;
   display: block;
 }
@@ -824,7 +917,9 @@ body.panel-resizing .edit-panel {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .email-modal-mode svg {
   width: 15px;
@@ -847,7 +942,9 @@ body.panel-resizing .edit-panel {
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .email-modal-close:hover {
   background: var(--g2);
@@ -952,7 +1049,9 @@ body.panel-resizing .edit-panel {
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .image-picker-close:hover {
   background: var(--g2);
@@ -969,17 +1068,21 @@ body.panel-resizing .edit-panel {
 }
 .image-picker-dropzone {
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
   padding: 20px;
   border: 1px dashed var(--border-strong);
   border-radius: 10px;
   color: var(--ui-muted);
   font-size: 12.5px;
   text-align: center;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.image-picker-dropzone-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 .image-picker-dropzone svg {
   color: var(--g6);
@@ -988,9 +1091,36 @@ body.panel-resizing .edit-panel {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
+.image-picker-dropzone-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--accent);
+  font-weight: 600;
+}
 .image-picker-dropzone.busy {
-  opacity: 0.6;
   pointer-events: none;
+}
+.image-picker-dropzone.busy .image-picker-dropzone-idle {
+  display: none;
+}
+.image-picker-dropzone.busy .image-picker-dropzone-loading {
+  display: flex;
+}
+.image-picker-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 2px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: image-picker-spin 0.7s linear infinite;
+}
+@keyframes image-picker-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .image-picker-upload-error {
   color: var(--orange);
@@ -1009,6 +1139,13 @@ body.panel-resizing .edit-panel {
   gap: 10px;
   align-content: start;
 }
+.image-picker-thumb-wrap {
+  position: relative;
+}
+.image-picker-thumb-wrap.deleting {
+  opacity: 0.4;
+  pointer-events: none;
+}
 .image-picker-thumb {
   appearance: none;
   padding: 0;
@@ -1017,8 +1154,11 @@ body.panel-resizing .edit-panel {
   overflow: hidden;
   cursor: pointer;
   aspect-ratio: 1;
+  width: 100%;
   background: var(--g2);
-  transition: border-color 0.1s, box-shadow 0.1s;
+  transition:
+    border-color 0.1s,
+    box-shadow 0.1s;
 }
 .image-picker-thumb img {
   width: 100%;
@@ -1031,6 +1171,37 @@ body.panel-resizing .edit-panel {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-ring);
   outline: none;
+}
+.image-picker-thumb-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(20, 20, 18, 0.55);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.1s,
+    background 0.1s;
+}
+.image-picker-thumb-delete svg {
+  width: 14px;
+  height: 14px;
+}
+.image-picker-thumb-wrap:hover .image-picker-thumb-delete,
+.image-picker-thumb-delete:focus-visible {
+  opacity: 1;
+}
+.image-picker-thumb-delete:hover {
+  background: var(--orange);
 }
 .image-picker-empty,
 .image-picker-error,
@@ -1115,7 +1286,9 @@ body.panel-resizing .edit-panel {
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .help-close:hover {
   background: var(--g2);
@@ -1235,7 +1408,9 @@ body.panel-resizing {
   justify-content: center;
   cursor: pointer;
   flex: 0 0 auto;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .pf-close svg {
   width: 16px;
@@ -1277,7 +1452,9 @@ body.panel-resizing {
   font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .pf-toggle-all:hover {
   background: var(--g2);
@@ -1373,7 +1550,9 @@ body.panel-resizing {
   flex: 0 0 auto;
   display: flex;
   color: var(--g6);
-  transition: transform 0.16s ease, color 0.1s;
+  transition:
+    transform 0.16s ease,
+    color 0.1s;
 }
 .pf-section-chevron svg {
   width: 16px;
@@ -1406,7 +1585,9 @@ body.panel-resizing {
   background: var(--g0);
   min-height: 20px;
   outline: none;
-  transition: border-color 0.1s, box-shadow 0.1s;
+  transition:
+    border-color 0.1s,
+    box-shadow 0.1s;
 }
 .pf-field.pf-single {
   white-space: nowrap;
@@ -1457,6 +1638,10 @@ body.panel-resizing {
 .pf-highlight-field {
   margin-top: 10px;
 }
+.pf-title-image-field,
+.pf-title-text-field {
+  margin-top: 10px;
+}
 .pf-fmt-btn {
   display: inline-flex;
   align-items: center;
@@ -1468,7 +1653,9 @@ body.panel-resizing {
   border-radius: 5px;
   color: var(--text-med);
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 .pf-fmt-btn svg {
   width: 16px;
@@ -1537,8 +1724,7 @@ body.panel-resizing {
   font-family: inherit;
   font-weight: 500;
   color: var(--text);
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8880' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8880' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
     right 7px center / 12px no-repeat var(--g0);
   cursor: pointer;
 }
@@ -1614,18 +1800,22 @@ body.panel-resizing {
     padding: 20px 10px 60px;
   }
   .articles {
-    column-count: 1;
+    grid-template-columns: 1fr;
+  }
+  .art-half {
+    grid-column: 1 / -1;
   }
   .mast {
-    grid-template-columns: 1fr;
     text-align: center;
-    gap: 12px;
+    row-gap: 12px;
+    width: auto;
   }
-  .mast-left {
+  .mast-row {
+    flex-wrap: wrap;
     justify-content: center;
   }
-  .mast-right {
-    margin: 0 auto;
+  .mast-pill-row {
+    justify-content: center;
   }
   .edito {
     grid-template-columns: 1fr;

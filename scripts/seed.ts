@@ -20,6 +20,7 @@ interface PrototypeArticle {
   image: string | null;
   body: string;
   highlight: string | null;
+  layout?: 'full' | 'half';
 }
 
 interface PrototypeState {
@@ -87,7 +88,14 @@ async function main(): Promise<void> {
   const { data: newsletterRow, error: newsletterError } = await supabase
     .from('newsletters')
     .insert({
-      mast: { ...state.mast, image: mastImage, footerLogoUrl: state.mast.footerLogoUrl ?? '/cfdt-logo-footer.svg' },
+      mast: {
+        title: `${state.mast.titleAccent} ${state.mast.titleRest}`.trim(),
+        titleMode: 'text',
+        titleImageUrl: null,
+        period: state.mast.period,
+        image: mastImage,
+        footerLogoUrl: state.mast.footerLogoUrl ?? '/cfdt-logo-footer.svg',
+      },
       edito: { ...state.edito, image: editoImage },
       info_box: state.infoBox,
       summer_box: { ...state.summerBox, image: summerImage },
@@ -113,6 +121,7 @@ async function main(): Promise<void> {
         image_url: articleImages[i],
         body: article.body,
         highlight: article.highlight,
+        layout: article.layout ?? 'full',
       })
       .select('*')
       .single();
@@ -130,6 +139,7 @@ async function main(): Promise<void> {
         imageUrl: articleRow.image_url,
         body: articleRow.body,
         highlight: articleRow.highlight,
+        layout: articleRow.layout,
         updatedAt: articleRow.updated_at,
       },
     });

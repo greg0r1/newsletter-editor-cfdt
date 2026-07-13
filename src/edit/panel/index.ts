@@ -22,6 +22,10 @@ export interface PanelCallbacks {
   onMoveArticleTo: (articleEl: HTMLElement, index: number) => void;
   /** Ajoute/retire l'encart mis en avant d'un article, renvoie l'élément si créé. */
   onToggleHighlight: (articleEl: HTMLElement) => HTMLElement | null;
+  /** Bascule la disposition d'un article entre pleine largeur et demi-largeur. */
+  onToggleLayout: (articleEl: HTMLElement) => void;
+  /** Bascule le titre du bandeau entre texte et image. */
+  onToggleTitleMode: () => void;
   /** Supprime un article après confirmation ; renvoie true si supprimé. */
   onDeleteArticle: (articleEl: HTMLElement) => boolean;
 }
@@ -235,7 +239,7 @@ export class EditPanel {
       case 'article':
         return renderArticle(this.collapsed, sel.el);
       case 'mast':
-        return renderMast(this.collapsed);
+        return renderMast(this.collapsed, this.root);
       case 'edito':
         return renderEdito(this.collapsed);
       case 'info':
@@ -280,7 +284,8 @@ export class EditPanel {
     if (action === 'article' && this.selection?.kind === 'article') {
       return this.selection.el.querySelector<HTMLImageElement>('.art-img')?.src ?? null;
     }
-    if (action === 'mast') return this.root.querySelector<HTMLImageElement>('.mast-right img')?.src ?? null;
+    if (action === 'mast') return this.root.querySelector<HTMLImageElement>('.mast-sun')?.src ?? null;
+    if (action === 'titleImage') return this.root.querySelector<HTMLImageElement>('.mast-title-img')?.src ?? null;
     if (action === 'footerLogo') return this.root.querySelector<HTMLImageElement>('.foot-logo img')?.src ?? null;
     if (action === 'edito') return this.root.querySelector<HTMLImageElement>('.edito-sun img')?.src ?? null;
     if (action === 'summer') return this.root.querySelector<HTMLImageElement>('.box-summer .sun-mini')?.src ?? null;
@@ -464,6 +469,16 @@ export class EditPanel {
             this.cb.onToggleHighlight(art);
             this.refresh();
           }
+          break;
+        case 'toggleLayout':
+          if (art) {
+            this.cb.onToggleLayout(art);
+            this.refresh();
+          }
+          break;
+        case 'toggleTitleMode':
+          this.cb.onToggleTitleMode();
+          this.refresh();
           break;
         case 'image': {
           const kind = btn.dataset.imageAction as ImageTarget;

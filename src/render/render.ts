@@ -4,10 +4,6 @@ function svgIcon(paths: string, w = 16, sw = 2): string {
   return `<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
 }
 
-const ICON_INFO = svgIcon(
-  '<circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
-  18,
-);
 const ICON_PEOPLE =
   '<svg width="52" height="36" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" fill="#ffffff">' +
   '<circle cx="16" cy="10" r="6"/><path d="M4 34 C4 24 9 21 16 21 C23 21 28 24 28 34 Z"/>' +
@@ -19,6 +15,14 @@ const ICON_HAND = svgIcon(
   28,
   1.9,
 );
+const ICON_MEGAPHONE = '<img class="mast-megaphone" src="/mast-megaphone.png" alt="" aria-hidden="true">';
+
+const ICON_SPARKLES =
+  '<svg class="mast-sparkles" width="30" height="26" viewBox="0 0 30 26" fill="var(--orange)" aria-hidden="true">' +
+  '<rect x="1" y="10" width="5" height="14" rx="2.5" transform="rotate(-28 3.5 17)"/>' +
+  '<rect x="12.5" y="6" width="5" height="16" rx="2.5"/>' +
+  '<rect x="24" y="10" width="5" height="14" rx="2.5" transform="rotate(28 26.5 17)"/>' +
+  '</svg>';
 
 export function articleHTML(a: Article): string {
   const imgBlock = a.imageUrl
@@ -30,8 +34,10 @@ export function articleHTML(a: Article): string {
       ? `<div class="art-highlight" data-field="highlight">${a.highlight}</div>`
       : '';
 
+  const halfClass = a.layout === 'half' ? ' art-half' : '';
+
   return (
-    `<article class="art selectable" data-id="${a.id}">` +
+    `<article class="art${halfClass} selectable" data-id="${a.id}" data-layout="${a.layout}">` +
     `<div class="art-head"><span class="num"></span><h3 data-field="title">${a.title}</h3></div>` +
     imgBlock +
     `<div class="art-body" data-field="body">${a.body}</div>` +
@@ -45,22 +51,27 @@ export function fullHTML(state: Newsletter): string {
 
   return (
     `<header class="mast selectable" data-block="mast">` +
-    `<div class="mast-left">` +
+    `<div class="mast-row mast-row-top">` +
     `<div class="img-wrap cfdt-logo-wrap"><img class="cfdt-logo" src="/cfdt-logo.svg" alt="CFDT"></div>` +
-    `<div class="mast-org" data-field="mastOrg">${state.mast.orgLines}</div>` +
+    `<div class="mast-title" data-title-mode="${state.mast.titleMode}">` +
+    (state.mast.titleMode === 'image'
+      ? `<img class="mast-title-img" src="${state.mast.titleImageUrl ?? ''}" alt="">`
+      : `<span data-field="mastTitle">${state.mast.title}</span>`) +
     `</div>` +
-    `<div class="mast-center">` +
-    `<div class="mast-title">` +
-    `<span class="o" data-field="titleAccent">${state.mast.titleAccent}</span>` +
-    ` <span data-field="titleRest">${state.mast.titleRest}</span>` +
     `</div>` +
+    `<div class="mast-row mast-row-bottom">` +
+    `<div class="img-wrap mast-sun-wrap"><img class="mast-sun" src="${state.mast.image}"></div>` +
+    `<div class="mast-pill-row">` +
+    `${ICON_MEGAPHONE}` +
     `<span class="mast-pill" data-field="period">${state.mast.period}</span>` +
+    `${ICON_SPARKLES}` +
     `</div>` +
-    `<div class="mast-right img-wrap"><img src="${state.mast.image}"></div>` +
+    `</div>` +
     `</header>` +
     `<section class="edito selectable" data-block="edito">` +
     `<div class="edito-sun img-wrap"><img src="${state.edito.image}"></div>` +
     `<div class="edito-txt">` +
+    `<span class="card-emoji">💬</span>` +
     `<span class="hello" data-field="editoHello">${state.edito.hello}</span>` +
     `<div class="edito-body" data-field="editoBody">${state.edito.body}</div>` +
     `<span class="sign" data-field="editoSign">${state.edito.signature}</span>` +
@@ -72,11 +83,11 @@ export function fullHTML(state: Newsletter): string {
     `<div class="tail">` +
     `<section class="bottom">` +
     `<div class="box box-info selectable" data-block="info">` +
-    `<div class="box-head"><span class="bh-ic">${ICON_INFO}</span><h4 data-field="infoTitle">${state.infoBox.title}</h4></div>` +
+    `<div class="box-head"><span class="bh-ic">ℹ️</span><h4 data-field="infoTitle">${state.infoBox.title}</h4></div>` +
     `<div class="box-body" data-field="infoBody">${state.infoBox.body}</div>` +
     `</div>` +
     `<div class="box box-summer selectable" data-block="summer">` +
-    `<div class="box-head img-wrap"><img class="sun-mini" src="${state.summerBox.image}">` +
+    `<div class="box-head img-wrap"><span class="bh-ic">☀️</span><img class="sun-mini" src="${state.summerBox.image}">` +
     `<h4 data-field="summerTitle">${state.summerBox.title}</h4></div>` +
     `<div class="box-body" data-field="summerBody">${state.summerBox.body}</div>` +
     `<span class="sign" data-field="summerSign">${state.summerBox.signature}</span>` +

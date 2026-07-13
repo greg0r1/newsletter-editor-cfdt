@@ -17,6 +17,7 @@ export interface CreateArticleBody {
   imageUrl: string | null;
   body: string;
   highlight: string | null;
+  layout: 'full' | 'half';
 }
 
 export function isCreateArticleBody(value: unknown): value is CreateArticleBody {
@@ -28,7 +29,8 @@ export function isCreateArticleBody(value: unknown): value is CreateArticleBody 
     typeof v.title === 'string' &&
     (typeof v.imageUrl === 'string' || v.imageUrl === null) &&
     typeof v.body === 'string' &&
-    (typeof v.highlight === 'string' || v.highlight === null)
+    (typeof v.highlight === 'string' || v.highlight === null) &&
+    (v.layout === 'full' || v.layout === 'half')
   );
 }
 
@@ -39,6 +41,7 @@ export interface UpdateArticleBody {
   imageUrl: string | null;
   body: string;
   highlight: string | null;
+  layout: 'full' | 'half';
 }
 
 export function isUpdateArticleBody(value: unknown): value is UpdateArticleBody {
@@ -50,7 +53,8 @@ export function isUpdateArticleBody(value: unknown): value is UpdateArticleBody 
     typeof v.title === 'string' &&
     (typeof v.imageUrl === 'string' || v.imageUrl === null) &&
     typeof v.body === 'string' &&
-    (typeof v.highlight === 'string' || v.highlight === null)
+    (typeof v.highlight === 'string' || v.highlight === null) &&
+    (v.layout === 'full' || v.layout === 'half')
   );
 }
 
@@ -88,9 +92,9 @@ function isMastShape(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
   return (
-    typeof v.orgLines === 'string' &&
-    typeof v.titleAccent === 'string' &&
-    typeof v.titleRest === 'string' &&
+    typeof v.title === 'string' &&
+    (v.titleMode === 'text' || v.titleMode === 'image') &&
+    (typeof v.titleImageUrl === 'string' || v.titleImageUrl === null) &&
     typeof v.period === 'string' &&
     typeof v.image === 'string' &&
     typeof v.footerLogoUrl === 'string'
@@ -107,6 +111,7 @@ function isArticleDTOShape(value: unknown): value is ArticleDTO {
     (typeof v.imageUrl === 'string' || v.imageUrl === null) &&
     typeof v.body === 'string' &&
     (typeof v.highlight === 'string' || v.highlight === null) &&
+    (v.layout === 'full' || v.layout === 'half') &&
     typeof v.updatedAt === 'string'
   );
 }

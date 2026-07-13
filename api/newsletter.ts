@@ -58,7 +58,6 @@ function isPersistedId(id: string): boolean {
 function sanitizeNewsletterHtmlFields(body: NewsletterDTO): NewsletterDTO {
   return {
     ...body,
-    mast: { ...body.mast, orgLines: sanitizeHtml(body.mast.orgLines) },
     edito: { ...body.edito, body: sanitizeHtml(body.edito.body) },
     infoBox: { ...body.infoBox, body: sanitizeHtml(body.infoBox.body) },
     summerBox: { ...body.summerBox, body: sanitizeHtml(body.summerBox.body) },
@@ -123,6 +122,7 @@ async function saveNewsletter(rawBody: NewsletterDTO): Promise<void> {
           image_url: article.imageUrl,
           body: article.body,
           highlight: article.highlight,
+          layout: article.layout,
           updated_at: new Date().toISOString(),
         })
         .eq('id', article.id);
@@ -142,6 +142,7 @@ async function saveNewsletter(rawBody: NewsletterDTO): Promise<void> {
           image_url: article.imageUrl,
           body: article.body,
           highlight: article.highlight,
+          layout: article.layout,
         })
         .select('id')
         .single<{ id: string }>();

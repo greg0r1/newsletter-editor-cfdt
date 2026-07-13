@@ -6,7 +6,7 @@ import { EditPanel, type Selection } from './panel';
 
 const SAVE_DELAY_MS = 700;
 
-export type ImageTarget = 'article' | 'mast' | 'footerLogo' | 'edito' | 'summer';
+export type ImageTarget = 'article' | 'mast' | 'titleImage' | 'footerLogo' | 'edito' | 'summer';
 
 export class Editor {
   private root: HTMLElement;
@@ -35,6 +35,8 @@ export class Editor {
         onMoveArticle: (articleEl, dir) => this.moveArticle(articleEl, dir),
         onMoveArticleTo: (articleEl, index) => this.moveArticleTo(articleEl, index),
         onToggleHighlight: (articleEl) => this.toggleHighlight(articleEl),
+        onToggleLayout: (articleEl) => this.toggleLayout(articleEl),
+        onToggleTitleMode: () => this.toggleTitleMode(),
         onDeleteArticle: (articleEl) => this.deleteArticle(articleEl),
       },
     });
@@ -108,21 +110,25 @@ export class Editor {
         imageUrl: img ? img.getAttribute('src') : null,
         body: bodyField ? bodyField.innerHTML.trim() : '',
         highlight: hl ? hl.innerHTML.trim() : null,
+        layout: el.dataset.layout === 'half' ? 'half' : 'full',
         updatedAt: new Date().toISOString(),
       };
     });
 
-    const mastImg = this.root.querySelector<HTMLImageElement>('.mast-right img');
+    const mastImg = this.root.querySelector<HTMLImageElement>('.mast-sun');
     const footerLogoImg = this.root.querySelector<HTMLImageElement>('.foot-logo img');
     const editoImg = this.root.querySelector<HTMLImageElement>('.edito-sun img');
     const summerImg = this.root.querySelector<HTMLImageElement>('.box-summer .sun-mini');
+    const titleEl = this.root.querySelector<HTMLElement>('.mast-title');
+    const titleMode = titleEl?.dataset.titleMode === 'image' ? 'image' : 'text';
+    const titleImg = titleEl?.querySelector<HTMLImageElement>('.mast-title-img');
 
     return {
       id: this.root.dataset.newsletterId ?? '',
       mast: {
-        orgLines: this.html('[data-field="mastOrg"]'),
-        titleAccent: this.text('[data-field="titleAccent"]'),
-        titleRest: this.text('[data-field="titleRest"]'),
+        title: this.text('[data-field="mastTitle"]'),
+        titleMode,
+        titleImageUrl: titleImg?.getAttribute('src') ?? null,
         period: this.text('[data-field="period"]'),
         image: mastImg?.getAttribute('src') ?? '',
         footerLogoUrl: footerLogoImg?.getAttribute('src') ?? '',
@@ -214,6 +220,41 @@ export class Editor {
     return true;
   }
 
+  private toggleLayout(artEl: HTMLElement): void {
+    const wasHalf = artEl.dataset.layout === 'half';
+    const nextLayout = wasHalf ? 'full' : 'half';
+    artEl.dataset.layout = nextLayout;
+    artEl.classList.toggle('art-half', nextLayout === 'half');
+    this.panel.recordUndo(() => {
+      artEl.dataset.layout = wasHalf ? 'half' : 'full';
+      artEl.classList.toggle('art-half', wasHalf);
+    });
+  }
+
+  /**
+   * Bascule le titre du bandeau entre texte et image. Reconstruit le contenu
+   * de `.mast-title` (span texte ↔ img) plutôt que de garder les deux en
+   * parallèle avec un simple `hidden` : évite qu'un ancien titre texte soit
+   * réenvoyé par erreur au serveur en mode image (serialize() ne lit que le
+   * mode courant, voir data-title-mode).
+   */
+  private toggleTitleMode(): void {
+    const titleEl = this.root.querySelector<HTMLElement>('.mast-title');
+    if (!titleEl) return;
+    const wasImage = titleEl.dataset.titleMode === 'image';
+    const previousHTML = titleEl.innerHTML;
+    const nextMode = wasImage ? 'text' : 'image';
+    titleEl.dataset.titleMode = nextMode;
+    titleEl.innerHTML =
+      nextMode === 'image'
+        ? `<img class="mast-title-img" src="" alt="">`
+        : `<span data-field="mastTitle">Titre</span>`;
+    this.panel.recordUndo(() => {
+      titleEl.dataset.titleMode = wasImage ? 'image' : 'text';
+      titleEl.innerHTML = previousHTML;
+    });
+  }
+
   private toggleHighlight(artEl: HTMLElement): HTMLElement | null {
     const existing = artEl.querySelector<HTMLElement>('.art-highlight');
     if (existing) {
@@ -244,6 +285,7 @@ export class Editor {
       imageUrl: null,
       body: "<p>Texte de l'article…</p>",
       highlight: null,
+      layout: 'full',
       updatedAt: new Date().toISOString(),
     };
     const container = this.root.querySelector<HTMLElement>('#articlesContainer');
@@ -299,7 +341,10 @@ export class Editor {
         this.panel.recordUndo(() => newWrap.remove());
       }
     } else if (target.kind === 'mast') {
-      const img = this.root.querySelector<HTMLImageElement>('.mast-right img');
+      const img = this.root.querySelector<HTMLImageElement>('.mast-sun');
+      if (img) this.replaceImageSrc(img, url);
+    } else if (target.kind === 'titleImage') {
+      const img = this.root.querySelector<HTMLImageElement>('.mast-title-img');
       if (img) this.replaceImageSrc(img, url);
     } else if (target.kind === 'footerLogo') {
       const img = this.root.querySelector<HTMLImageElement>('.foot-logo img');

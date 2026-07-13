@@ -1,7 +1,7 @@
 export interface Mast {
-  orgLines: string;
-  titleAccent: string;
-  titleRest: string;
+  title: string;
+  titleMode: 'text' | 'image';
+  titleImageUrl: string | null;
   period: string;
   image: string;
   footerLogoUrl: string;
@@ -21,6 +21,7 @@ export interface Article {
   imageUrl: string | null;
   body: string;
   highlight: string | null;
+  layout: 'full' | 'half';
   updatedAt: string;
 }
 

@@ -37,6 +37,7 @@ export async function POST(request: Request): Promise<Response> {
         image_url: body.imageUrl,
         body: sanitizeHtml(body.body),
         highlight: body.highlight != null ? sanitizeHtml(body.highlight) : null,
+        layout: body.layout,
       })
       .select('*')
       .single<ArticleRow>();
@@ -70,6 +71,7 @@ export async function PUT(request: Request): Promise<Response> {
         image_url: body.imageUrl,
         body: sanitizeHtml(body.body),
         highlight: body.highlight != null ? sanitizeHtml(body.highlight) : null,
+        layout: body.layout,
         updated_at: new Date().toISOString(),
       })
       .eq('id', body.id)

@@ -99,24 +99,21 @@ function articlesGrid(articles: Article[]): string {
   );
 }
 
-/** Header : logo + orgLines (gauche) | titre + pill (centre) | mast.image (droite). */
+/** Header : logo (gauche) | titre + pill (centre) | mast.image (droite). */
 function headerBlock(mast: Mast): string {
   const logo = LOGO_MAST_URL
-    ? `<td valign="middle" style="padding-right:8px;"><img src="${LOGO_MAST_URL}" width="78" height="78" alt="CFDT" style="display:block;width:78px;height:78px;border:0;"></td>`
+    ? `<td class="stack" width="78" valign="middle" style="padding:2px 0 6px 0;"><img src="${LOGO_MAST_URL}" width="78" height="78" alt="CFDT" style="display:block;width:78px;height:78px;border:0;"></td>`
     : '';
   const right = mast.image
     ? `<td class="stack" width="128" valign="top" align="right" style="padding:2px 0 6px 0;">${img(mast.image, 128)}</td>`
     : '';
   return (
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>` +
-    `<td class="stack" width="275" valign="middle" style="padding:2px 0 6px 0;">` +
-    `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>` +
     logo +
-    `<td valign="middle" style="font-family:${FONT_HEAD};font-weight:800;color:${C.orange};font-size:12px;line-height:1.35;letter-spacing:.2px;">${mast.orgLines}</td>` +
-    `</tr></table></td>` +
     `<td class="stack" valign="top" align="center" style="padding:2px 0 6px 0;text-align:center;">` +
-    `<div class="mast-title" style="font-weight:900;font-size:46px;letter-spacing:1px;color:${C.navy};line-height:1.15;margin-top:4px;font-family:${FONT_BODY};text-align:center;">` +
-    `<span style="color:${C.orange};">${mast.titleAccent}</span> <span style="white-space:nowrap;">${mast.titleRest}</span></div>` +
+    (mast.titleMode === 'image' && mast.titleImageUrl
+      ? `<img src="${mast.titleImageUrl}" alt="${mast.title}" style="display:block;max-width:320px;height:auto;margin:4px auto 0 auto;">`
+      : `<div class="mast-title" style="font-weight:900;font-size:46px;letter-spacing:1px;color:${C.navy};line-height:1.15;margin-top:4px;font-family:${FONT_BODY};text-align:center;">${mast.title}</div>`) +
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px auto 0 auto;"><tr>` +
     `<td style="background:${C.navy};border-radius:20px;padding:6px 30px 7px 30px;color:#ffffff;font-style:italic;font-weight:800;font-size:19px;letter-spacing:.5px;white-space:nowrap;font-family:${FONT_BODY};">${mast.period}</td>` +
     `</tr></table></td>` +
